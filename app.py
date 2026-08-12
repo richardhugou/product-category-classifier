@@ -39,6 +39,10 @@ COULEURS = {
     "Image seule": "#eb6834",
     "Texte + image": "#1baf7a",
 }
+# Encres neutres : elles portent le texte et les repères, jamais l'identité
+# d'une série. Toutes deux passent le contraste sur fond clair comme sur sombre.
+ENCRE_FORTE = "#f2f4f7"
+ENCRE_DOUCE = "#98a2b3"
 
 st.set_page_config(page_title="Catégorisation d'articles", page_icon="🏷️", layout="wide")
 
@@ -186,23 +190,55 @@ def graphe_probabilites(series: dict[str, np.ndarray], vrai: str | None):
     ordre = [labels[i] for i in np.argsort(-reference)]
     noms = list(series.keys())
 
+    # Le repère de vérité terrain vit sur l'étiquette d'axe et cumule trois
+    # signaux — un chevron, la graisse et un contraste maximal. Aucun n'est une
+    # teinte : une couleur d'annotation ne doit jamais pouvoir se lire comme une
+    # série, et l'or que j'avais d'abord retenu se confondait avec l'orange de
+    # « Image seule », a fortiori sous déficience de perception rouge-vert.
+    if vrai:
+        echappe = vrai.replace("'", "\\'")
+        est_vrai = f"datum.value === '{echappe}'"
+        axe_y = alt.Axis(
+            labelFontSize=12,
+            labelLimit=230,
+            labelExpr=f"{est_vrai} ? '▶  ' + datum.value : datum.value",
+            labelFontWeight=alt.expr(f"{est_vrai} ? 'bold' : 'normal'"),
+            labelColor=alt.expr(f"{est_vrai} ? '{ENCRE_FORTE}' : '{ENCRE_DOUCE}'"),
+        )
+    else:
+        axe_y = alt.Axis(labelFontSize=12, labelLimit=230, labelColor=ENCRE_DOUCE)
+
     base = alt.Chart(d).encode(
-        y=alt.Y(
-            "Catégorie:N", sort=ordre, title=None, axis=alt.Axis(labelFontSize=12, labelLimit=200)
-        ),
-        yOffset=alt.YOffset("Modèle:N", sort=noms),
+        # paddingInner sépare les trois barres d'un même groupe : sans lui les
+        # aplats se touchent et le groupe se lit comme un seul bloc.
+        y=alt.Y("Catégorie:N", sort=ordre, title=None, axis=axe_y),
+        yOffset=alt.YOffset("Modèle:N", sort=noms, scale=alt.Scale(paddingInner=0.25)),
     )
     barres = base.mark_bar(cornerRadiusEnd=3).encode(
+        # Cinq graduations suffisent à situer une proportion. La version
+        # précédente en affichait vingt-et-une, avec une grille à chaque cran :
+        # l'œil comptait des lignes au lieu de comparer des longueurs.
         x=alt.X(
             "Probabilité:Q",
             scale=alt.Scale(domain=[0, 1]),
-            axis=alt.Axis(format=".0%", title="Probabilité", grid=True),
+            axis=alt.Axis(
+                format=".0%",
+                title=None,
+                values=[0, 0.25, 0.5, 0.75, 1],
+                grid=True,
+                gridOpacity=0.18,
+                domain=False,
+                tickSize=0,
+                labelColor=ENCRE_DOUCE,
+            ),
         ),
         color=alt.Color(
             "Modèle:N",
             sort=noms,
             scale=alt.Scale(domain=noms, range=[COULEURS[n] for n in noms]),
-            legend=alt.Legend(orient="top", title=None, symbolType="square"),
+            legend=alt.Legend(
+                orient="top", title=None, symbolType="square", labelColor=ENCRE_DOUCE
+            ),
         ),
         tooltip=[
             alt.Tooltip("Catégorie:N"),
@@ -211,26 +247,18 @@ def graphe_probabilites(series: dict[str, np.ndarray], vrai: str | None):
         ],
     )
     # Étiquettes directes : avec trois séries, l'œil ne compare pas des
-    # longueurs proches de façon fiable. On n'étiquette que ce qui compte —
-    # 21 nombres à l'écran seraient du bruit — et dans un gris neutre, lisible
-    # sur fond clair comme sur fond sombre.
-    etiquettes = base.mark_text(
-        align="left", dx=5, fontSize=11, fontWeight="bold", color="#9aa4b0"
-    ).encode(
+    # longueurs proches de façon fiable. On étiquette les trois barres de chaque
+    # groupe ou aucune — un étiquetage au cas par cas se lit comme un oubli.
+    etiquettes = base.mark_text(align="left", dx=5, fontSize=11, color=ENCRE_DOUCE).encode(
         x=alt.X("Probabilité:Q", scale=alt.Scale(domain=[0, 1])),
         text=alt.Text("Probabilité:Q", format=".0%"),
-        opacity=alt.condition(alt.datum.Probabilité >= 0.08, alt.value(1), alt.value(0)),
+        opacity=alt.condition(alt.datum.Probabilité >= 0.03, alt.value(1), alt.value(0)),
     )
 
-    graphe = (barres + etiquettes).properties(height=alt.Step(18))
-    if vrai:
-        regle = (
-            alt.Chart(pd.DataFrame({"Catégorie": [vrai]}))
-            .mark_rule(color="#52514e", strokeDash=[4, 3], strokeWidth=1.5)
-            .encode(y=alt.Y("Catégorie:N", sort=ordre))
-        )
-        graphe = graphe + regle
-    return graphe
+    # Pas de couche de fond pour marquer la vérité terrain : un mark_rect
+    # superposé perturbe le calcul des bandes quand un yOffset est en jeu, et
+    # les barres finissent par se chevaucher.
+    return (barres + etiquettes).properties(height=alt.Step(19))
 
 
 # ─────────────────────────────────────────────────────────────── prédiction
@@ -281,22 +309,38 @@ if st.button("Catégoriser", type="primary") and texte.strip():
         categorie, confiance = labels[i], float(proba[i])
         verdicts[nom] = categorie
         with col:
+            # Bloc composé à la main plutôt que st.metric + st.progress :
+            #   — st.metric tronque les valeurs longues, et « Home Decor &
+            #     Festive Needs » est précisément la bonne réponse ;
+            #   — st.progress ne se colore pas, si bien que la jauge restait
+            #     bleue sous une pastille orange : la couleur cessait de
+            #     désigner la série.
+            teinte = COULEURS[nom]
+            retenu = confiance >= seuil
             st.markdown(
-                f"<span style='display:inline-block;width:10px;height:10px;border-radius:2px;"
-                f"background:{COULEURS[nom]};margin-right:6px'></span>**{nom}**",
+                f"""
+<div style="line-height:1.35">
+  <div style="font-weight:700;font-size:.95rem">
+    <span style="display:inline-block;width:10px;height:10px;border-radius:2px;
+                 background:{teinte};margin-right:7px"></span>{nom}
+  </div>
+  <div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;
+              color:{ENCRE_DOUCE};margin-top:.7rem">Catégorie proposée</div>
+  <div style="font-size:1.35rem;font-weight:700;margin:.15rem 0 .55rem">
+    {categorie if retenu else "En revue"}</div>
+  <div style="height:7px;border-radius:4px;background:{ENCRE_DOUCE}33;overflow:hidden">
+    <div style="width:{confiance * 100:.1f}%;height:100%;background:{teinte}"></div>
+  </div>
+  <div style="font-size:.78rem;color:{ENCRE_DOUCE};margin-top:.3rem">
+    confiance {confiance:.0%}{"" if retenu else f" · sous le seuil de {seuil:.0%}"}</div>
+</div>""",
                 unsafe_allow_html=True,
             )
-            st.metric(
-                "Catégorie" if confiance >= seuil else "Catégorie · sous le seuil",
-                categorie if confiance >= seuil else "En revue",
-                delta=f"{confiance:.0%} de confiance",
-                delta_color="normal" if confiance >= seuil else "inverse",
-            )
-            if confiance < seuil:
-                st.caption(f"Proposition retenue si le seuil baissait : « {categorie} »")
+            if not retenu:
+                st.caption(f"Sans le garde-fou, la proposition serait « {categorie} ».")
             st.caption(f"{ms:.1f} ms · modèle `{version}`")
             if vrai:
-                st.caption("✓ correct" if categorie == vrai else "✗ erroné")
+                st.caption("Correct ✓" if categorie == vrai else "Erroné ✗")
 
     if vrai:
         justes = [n for n, c in verdicts.items() if c == vrai]
@@ -309,12 +353,32 @@ if st.button("Catégoriser", type="primary") and texte.strip():
     st.caption(
         "Une barre par modèle et par catégorie. Les barres ne sont pas empilées : "
         "additionner les probabilités de deux modèles n'aurait aucun sens."
-        + (" Le trait pointillé marque la catégorie réelle." if vrai else "")
+        + (
+            " La catégorie marquée d'un chevron sur l'axe est la vérité terrain — "
+            "la référence contre laquelle les trois modèles se jugent."
+            if vrai
+            else ""
+        )
     )
     st.altair_chart(
         graphe_probabilites({n: r[0] for n, r in resultats.items()}, vrai),
         use_container_width=True,
     )
+
+    # Une vue tabulaire double le graphe : les valeurs exactes ne doivent pas
+    # dépendre du survol, sans quoi elles sont perdues au clavier et à
+    # l'impression.
+    with st.expander("Les mêmes valeurs en tableau"):
+        table = pd.DataFrame({nom: proba for nom, (proba, _, _) in resultats.items()}, index=labels)
+        table = table.loc[table.iloc[:, -1].sort_values(ascending=False).index]
+        if vrai:
+            table.index = [f"▶ {c}" if c == vrai else c for c in table.index]
+        st.dataframe(
+            table.style.format("{:.1%}"),
+            use_container_width=True,
+        )
+        if vrai:
+            st.caption("Le chevron marque la vérité terrain.")
 
 # ─────────────────────────────────────────────────────────────── benchmark
 with st.expander("Le benchmark complet"):
