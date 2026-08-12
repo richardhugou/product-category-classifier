@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+.DS_Store
+
+# artefacts régénérables
+models/
+
+# volumineux, régénérables : 351 Mo de photographies, 13 Mo de caractéristiques
+data/Flipkart
+data/features
