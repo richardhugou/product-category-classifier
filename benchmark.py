@@ -164,6 +164,7 @@ def main(avec_encodeurs: bool, avec_images: bool) -> None:
 
         mlp_img = _mlp()
         _, t = _chronometrer(lambda: mlp_img.fit(I_tr, y_tr))
+        joblib.dump(mlp_img, MODELS / "image_mlp.joblib")
         pred, t_inf = _chronometrer(lambda: mlp_img.predict(I_te))
         ajouter("DINOv2 figé — image seule", pred, t + t_img, t_inf * 1000 / n_te + ms_img, mo_img)
 
