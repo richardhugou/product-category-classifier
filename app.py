@@ -186,10 +186,24 @@ def graphe_probabilites(series: dict[str, np.ndarray], vrai: str | None):
     ordre = [labels[i] for i in np.argsort(-reference)]
     noms = list(series.keys())
 
+    # La vérité terrain est la référence contre laquelle tout se juge : son
+    # repère cumule trois signaux sur l'étiquette d'axe — pastille, graisse et
+    # couleur — pour ne dépendre d'aucun seul. Le trait pointillé précédent se
+    # confondait avec une graduation et disparaissait sur fond sombre.
+    if vrai:
+        echappe = vrai.replace("'", "\\'")
+        axe_y = alt.Axis(
+            labelFontSize=12,
+            labelLimit=220,
+            labelExpr=f"datum.value === '{echappe}' ? '● ' + datum.value : datum.value",
+            labelFontWeight=alt.expr(f"datum.value === '{echappe}' ? 'bold' : 'normal'"),
+            labelColor=alt.expr(f"datum.value === '{echappe}' ? '#e8b93f' : '#9aa4b0'"),
+        )
+    else:
+        axe_y = alt.Axis(labelFontSize=12, labelLimit=220, labelColor="#9aa4b0")
+
     base = alt.Chart(d).encode(
-        y=alt.Y(
-            "Catégorie:N", sort=ordre, title=None, axis=alt.Axis(labelFontSize=12, labelLimit=200)
-        ),
+        y=alt.Y("Catégorie:N", sort=ordre, title=None, axis=axe_y),
         yOffset=alt.YOffset("Modèle:N", sort=noms),
     )
     barres = base.mark_bar(cornerRadiusEnd=3).encode(
@@ -222,15 +236,12 @@ def graphe_probabilites(series: dict[str, np.ndarray], vrai: str | None):
         opacity=alt.condition(alt.datum.Probabilité >= 0.08, alt.value(1), alt.value(0)),
     )
 
-    graphe = (barres + etiquettes).properties(height=alt.Step(18))
-    if vrai:
-        regle = (
-            alt.Chart(pd.DataFrame({"Catégorie": [vrai]}))
-            .mark_rule(color="#52514e", strokeDash=[4, 3], strokeWidth=1.5)
-            .encode(y=alt.Y("Catégorie:N", sort=ordre))
-        )
-        graphe = graphe + regle
-    return graphe
+    # Pas de couche de fond pour marquer la vérité terrain : un mark_rect
+    # superposé perturbe le calcul des bandes quand un yOffset est en jeu, et
+    # les barres finissent par se chevaucher. Le repère vit donc entièrement
+    # sur l'axe — pastille, gras et couleur distincte — ce qui ne touche pas
+    # à la géométrie.
+    return (barres + etiquettes).properties(height=alt.Step(18))
 
 
 # ─────────────────────────────────────────────────────────────── prédiction
@@ -309,7 +320,12 @@ if st.button("Catégoriser", type="primary") and texte.strip():
     st.caption(
         "Une barre par modèle et par catégorie. Les barres ne sont pas empilées : "
         "additionner les probabilités de deux modèles n'aurait aucun sens."
-        + (" Le trait pointillé marque la catégorie réelle." if vrai else "")
+        + (
+            " La catégorie marquée d'une pastille dorée sur l'axe est la vérité "
+            "terrain — la référence contre laquelle les trois modèles se jugent."
+            if vrai
+            else ""
+        )
     )
     st.altair_chart(
         graphe_probabilites({n: r[0] for n, r in resultats.items()}, vrai),
