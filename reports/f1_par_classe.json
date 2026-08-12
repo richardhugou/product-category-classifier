@@ -16,5 +16,23 @@
     "Home Furnishing": 0.958,
     "Kitchen & Dining": 0.933,
     "Watches": 0.978
+  },
+  "DINOv2 figé — image seule": {
+    "Baby Care": 0.864,
+    "Beauty and Personal Care": 0.952,
+    "Computers": 0.957,
+    "Home Decor & Festive Needs": 0.93,
+    "Home Furnishing": 0.92,
+    "Kitchen & Dining": 0.933,
+    "Watches": 1.0
+  },
+  "Fusion texte + image": {
+    "Baby Care": 0.957,
+    "Beauty and Personal Care": 0.977,
+    "Computers": 1.0,
+    "Home Decor & Festive Needs": 0.955,
+    "Home Furnishing": 0.979,
+    "Kitchen & Dining": 0.955,
+    "Watches": 1.0
   }
 }
