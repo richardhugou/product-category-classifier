@@ -1,0 +1,28 @@
+.PHONY: help all benchmark figures demo test lint notebooks clean
+
+help:                        ## affiche cette aide
+	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n",$$1,$$2}'
+
+all: benchmark figures       ## reproduit tous les artefacts de reports/
+
+benchmark:                   ## entraîne et évalue (ENCODERS=1 IMAGES=1 pour tout)
+	python benchmark.py $(if $(ENCODERS),--encoders,) $(if $(IMAGES),--images,)
+
+figures:                     ## regénère les quatre figures
+	python -m src.figures
+
+demo:                        ## lance la démonstration
+	streamlit run app.py
+
+test:                        ## tests unitaires
+	pytest
+
+lint:                        ## lint et format
+	ruff check . && ruff format --check .
+
+notebooks:                   ## rejoue les six carnets en place
+	python scripts/run_notebooks.py
+
+clean:
+	rm -rf models reports/*.png reports/*.csv reports/*.json .pytest_cache
+	find . -name __pycache__ -type d -exec rm -rf {} +
