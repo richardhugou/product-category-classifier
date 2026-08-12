@@ -5,8 +5,9 @@ Les axes rapportés ne sont pas seulement la performance : le temps
 d'entraînement, le temps d'inférence **de bout en bout** et l'empreinte
 déployée décident autant, et souvent plus.
 
-    python benchmark.py             # texte classique — socle, sans torch
-    python benchmark.py --encoders  # + BERT et ModernBERT figés
+    python benchmark.py                      # texte classique — socle, sans torch
+    python benchmark.py --encoders           # + BERT et ModernBERT figés
+    python benchmark.py --encoders --images  # + image seule
 """
 
 from __future__ import annotations
@@ -18,6 +19,7 @@ import time
 from pathlib import Path
 
 import joblib
+import numpy as np
 import pandas as pd
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import LabelEncoder
@@ -31,6 +33,12 @@ ROOT = Path(__file__).parent
 REPORTS = ROOT / "reports"
 MODELS = ROOT / "models"
 
+# Coût d'encodage d'une photographie, mesuré sur la machine de développement.
+# Quand les caractéristiques viennent du cache, ce coût doit être réintégré :
+# en production, chaque nouvel article doit bel et bien être encodé.
+MS_ENCODAGE_IMAGE = 35.7
+
+
 def _mlp() -> MLPClassifier:
     return MLPClassifier(
         hidden_layer_sizes=(128, 64), max_iter=300, early_stopping=True, random_state=SEED
@@ -43,7 +51,7 @@ def _chronometrer(fn):
     return resultat, time.perf_counter() - t0
 
 
-def main(avec_encodeurs: bool) -> None:
+def main(avec_encodeurs: bool, avec_images: bool) -> None:
     REPORTS.mkdir(exist_ok=True)
     MODELS.mkdir(exist_ok=True)
 
@@ -140,6 +148,25 @@ def main(avec_encodeurs: bool) -> None:
             except Exception as e:  # réseau, poids indisponibles, mémoire
                 print(f"  {nom:30s} ÉCHEC — {type(e).__name__}: {str(e)[:80]}")
 
+    # ------------------------------------------------------- image et fusion
+    if avec_images:
+        from src.fusion import normaliser
+        from src.images import MODEL_ID, empreinte_encodeur_mo, features
+
+        print(f"\nImage — {MODEL_ID} figé")
+        X_img, t_enc = features(df["uniq_id"])
+        par_id = dict(zip(df["uniq_id"], X_img, strict=True))
+        I_tr = normaliser(np.vstack([par_id[u] for u in train["uniq_id"]]))
+        I_te = normaliser(np.vstack([par_id[u] for u in test["uniq_id"]]))
+        t_img = t_enc * len(train) / len(df) if t_enc else 0.0
+        ms_img = (t_enc / len(df) * 1000) if t_enc else MS_ENCODAGE_IMAGE
+        mo_img = empreinte_encodeur_mo()
+
+        mlp_img = _mlp()
+        _, t = _chronometrer(lambda: mlp_img.fit(I_tr, y_tr))
+        pred, t_inf = _chronometrer(lambda: mlp_img.predict(I_te))
+        ajouter("DINOv2 figé — image seule", pred, t + t_img, t_inf * 1000 / n_te + ms_img, mo_img)
+
     # ------------------------------------------------------------- sorties
     par_classe = {ligne["Modèle"]: ligne.pop("_par_classe") for ligne in lignes}
     tableau = pd.DataFrame(lignes).sort_values("F1 macro", ascending=False)
@@ -155,5 +182,6 @@ def main(avec_encodeurs: bool) -> None:
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--encoders", action="store_true", help="BERT et ModernBERT figés")
+    p.add_argument("--images", action="store_true", help="image seule et fusion")
     a = p.parse_args()
-    main(a.encoders)
+    main(a.encoders, a.images)
