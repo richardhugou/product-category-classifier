@@ -1,0 +1,3 @@
+Modèle,F1 macro,Accuracy,F1 classe min,Entraînement (s),Inférence (ms/article),Empreinte (Mo),"Seuil 0,90"
+TF-IDF + MLP,0.9427,0.943,0.8696,0.5,0.06,14.3,oui
+TF-IDF + XGBoost,0.9234,0.9241,0.8372,4.57,0.08,2.6,oui

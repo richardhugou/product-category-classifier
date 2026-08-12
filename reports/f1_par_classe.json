@@ -1,0 +1,20 @@
+{
+  "TF-IDF + XGBoost": {
+    "Baby Care": 0.837,
+    "Beauty and Personal Care": 0.952,
+    "Computers": 1.0,
+    "Home Decor & Festive Needs": 0.864,
+    "Home Furnishing": 0.92,
+    "Kitchen & Dining": 0.913,
+    "Watches": 0.978
+  },
+  "TF-IDF + MLP": {
+    "Baby Care": 0.905,
+    "Beauty and Personal Care": 0.977,
+    "Computers": 0.979,
+    "Home Decor & Festive Needs": 0.87,
+    "Home Furnishing": 0.958,
+    "Kitchen & Dining": 0.933,
+    "Watches": 0.978
+  }
+}
