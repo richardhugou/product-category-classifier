@@ -1,11 +1,11 @@
-"""Démonstration — catégorisation d'un article, texte seul ou texte + image.
+"""Démonstration — catégoriser un article par le texte, par l'image, ou par les deux.
 
     streamlit run app.py
 
-Deux modèles tournent côte à côte : le modèle texte, quasi gratuit, et la
-fusion texte + image, plus juste mais 600 fois plus coûteuse à l'inférence.
-Le seuil de confiance matérialise UC4 — sous le seuil, le modèle ne tranche
-pas et l'article part en revue humaine.
+Les trois modèles tournent côte à côte sur le même article : c'est le seul
+moyen de voir *où* l'image apporte quelque chose. Le seuil de confiance
+matérialise UC4 — sous le seuil, le modèle ne tranche pas et l'article part en
+revue humaine.
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ import sys
 import time
 from pathlib import Path
 
+import altair as alt
 import joblib
 import numpy as np
 import pandas as pd
@@ -25,11 +26,19 @@ sys.path.insert(0, str(ROOT))
 from src.images import image_path  # noqa: E402
 from src.pipeline import LABEL_COL, TEXT_COL, load, split  # noqa: E402
 
-TEXTE_PATH = ROOT / "models" / "tfidf_mlp.joblib"
-FUSION_PATH = ROOT / "models" / "fusion_mlp.joblib"
+MODELS = ROOT / "models"
 FEATURES = ROOT / "data" / "features"
 SEUIL_DEFAUT = 0.60
-MS_ENCODAGE_IMAGE = 35.7  # mesuré sur cette machine
+MS_ENCODAGE_IMAGE = 35.7  # mesuré sur la machine de développement
+
+# Trois premiers créneaux d'une palette catégorielle validée : ce sont les
+# seuls à rester distinguables en vision des couleurs déficiente lorsque
+# toutes les paires se côtoient, ce qui est le cas d'un graphe groupé.
+COULEURS = {
+    "Texte seul": "#2a78d6",
+    "Image seule": "#eb6834",
+    "Texte + image": "#1baf7a",
+}
 
 st.set_page_config(page_title="Catégorisation d'articles", page_icon="🏷️", layout="wide")
 
@@ -41,13 +50,19 @@ def _empreinte(p: Path) -> str:
 
 @st.cache_resource
 def get_modeles():
-    vec, clf = joblib.load(TEXTE_PATH)
-    v_texte = _empreinte(TEXTE_PATH)
-    fusion, v_fusion = None, None
-    if FUSION_PATH.exists():
-        _, fusion = joblib.load(FUSION_PATH)
-        v_fusion = _empreinte(FUSION_PATH)
-    return vec, clf, fusion, v_texte, v_fusion
+    """Renvoie {nom: (modèle, version)} pour ceux qui existent sur disque."""
+    m = {}
+    vec, texte = joblib.load(MODELS / "tfidf_mlp.joblib")
+    m["Texte seul"] = (texte, _empreinte(MODELS / "tfidf_mlp.joblib"))
+    if (MODELS / "image_mlp.joblib").exists():
+        m["Image seule"] = (
+            joblib.load(MODELS / "image_mlp.joblib"),
+            _empreinte(MODELS / "image_mlp.joblib"),
+        )
+    if (MODELS / "fusion_mlp.joblib").exists():
+        _, fusion = joblib.load(MODELS / "fusion_mlp.joblib")
+        m["Texte + image"] = (fusion, _empreinte(MODELS / "fusion_mlp.joblib"))
+    return vec, m
 
 
 @st.cache_resource
@@ -80,7 +95,7 @@ def vecteur_image(uniq_id=None, fichier=None):
     """Renvoie (vecteur 1536, millisecondes). Sert le cache si l'article est connu."""
     cache = get_features_cache()
     if fichier is None and uniq_id is not None and uniq_id in cache:
-        return cache[uniq_id], MS_ENCODAGE_IMAGE  # coût réel réintégré
+        return cache[uniq_id], MS_ENCODAGE_IMAGE  # le coût réel est réintégré
     if fichier is None:
         return None, 0.0
 
@@ -97,7 +112,7 @@ def vecteur_image(uniq_id=None, fichier=None):
     return v, (time.perf_counter() - t0) * 1000
 
 
-vec, clf, fusion, v_texte, v_fusion = get_modeles()
+vec, modeles = get_modeles()
 test = get_exemples()
 labels = sorted(test[LABEL_COL].unique())
 
@@ -107,7 +122,7 @@ st.caption(
     "seuil métier F1 macro ≥ 0,90"
 )
 
-# ---------------------------------------------------------------- barre latérale
+# ─────────────────────────────────────────────────────────── barre latérale
 seuil = st.sidebar.slider(
     "Seuil de confiance",
     0.0,
@@ -124,11 +139,11 @@ if st.sidebar.button("Charger", use_container_width=True):
     st.session_state.update(texte=ligne[TEXT_COL], vrai=ligne[LABEL_COL], uniq=ligne["uniq_id"])
 
 st.sidebar.markdown("---")
-st.sidebar.caption(f"Modèle texte `{v_texte}`")
-if v_fusion:
-    st.sidebar.caption(f"Modèle fusion `{v_fusion}`")
+st.sidebar.caption("**Modèles chargés**")
+for nom, (_, version) in modeles.items():
+    st.sidebar.caption(f"{nom} · `{version}`")
 
-# ---------------------------------------------------------------- saisie
+# ───────────────────────────────────────────────────────────────── saisie
 gauche, droite = st.columns([3, 2])
 
 with gauche:
@@ -153,71 +168,156 @@ with droite:
     else:
         st.info("Sans photographie, seul le modèle texte se prononce.")
 
-# ---------------------------------------------------------------- prédiction
-if st.button("Catégoriser", type="primary") and texte.strip():
-    t0 = time.perf_counter()
-    X = vec.transform([texte])
-    p_texte = clf.predict_proba(X)[0]
-    ms_texte = (time.perf_counter() - t0) * 1000
 
+def graphe_probabilites(series: dict[str, np.ndarray], vrai: str | None):
+    """Barres groupées horizontales — une barre par modèle et par catégorie.
+
+    Surtout pas d'empilement : additionner les probabilités de deux modèles
+    n'a aucun sens, et la hauteur cumulée se lirait comme une valeur.
+    """
+    lignes = [
+        {"Catégorie": c, "Modèle": nom, "Probabilité": float(p)}
+        for nom, proba in series.items()
+        for c, p in zip(labels, proba, strict=True)
+    ]
+    d = pd.DataFrame(lignes)
+
+    reference = series.get("Texte + image", next(iter(series.values())))
+    ordre = [labels[i] for i in np.argsort(-reference)]
+    noms = list(series.keys())
+
+    base = alt.Chart(d).encode(
+        y=alt.Y(
+            "Catégorie:N", sort=ordre, title=None, axis=alt.Axis(labelFontSize=12, labelLimit=200)
+        ),
+        yOffset=alt.YOffset("Modèle:N", sort=noms),
+    )
+    barres = base.mark_bar(cornerRadiusEnd=3).encode(
+        x=alt.X(
+            "Probabilité:Q",
+            scale=alt.Scale(domain=[0, 1]),
+            axis=alt.Axis(format=".0%", title="Probabilité", grid=True),
+        ),
+        color=alt.Color(
+            "Modèle:N",
+            sort=noms,
+            scale=alt.Scale(domain=noms, range=[COULEURS[n] for n in noms]),
+            legend=alt.Legend(orient="top", title=None, symbolType="square"),
+        ),
+        tooltip=[
+            alt.Tooltip("Catégorie:N"),
+            alt.Tooltip("Modèle:N"),
+            alt.Tooltip("Probabilité:Q", format=".1%"),
+        ],
+    )
+    # Étiquettes directes : avec trois séries, l'œil ne compare pas des
+    # longueurs proches de façon fiable. On n'étiquette que ce qui compte —
+    # 21 nombres à l'écran seraient du bruit — et dans un gris neutre, lisible
+    # sur fond clair comme sur fond sombre.
+    etiquettes = base.mark_text(
+        align="left", dx=5, fontSize=11, fontWeight="bold", color="#9aa4b0"
+    ).encode(
+        x=alt.X("Probabilité:Q", scale=alt.Scale(domain=[0, 1])),
+        text=alt.Text("Probabilité:Q", format=".0%"),
+        opacity=alt.condition(alt.datum.Probabilité >= 0.08, alt.value(1), alt.value(0)),
+    )
+
+    graphe = (barres + etiquettes).properties(height=alt.Step(18))
+    if vrai:
+        regle = (
+            alt.Chart(pd.DataFrame({"Catégorie": [vrai]}))
+            .mark_rule(color="#52514e", strokeDash=[4, 3], strokeWidth=1.5)
+            .encode(y=alt.Y("Catégorie:N", sort=ordre))
+        )
+        graphe = graphe + regle
+    return graphe
+
+
+# ─────────────────────────────────────────────────────────────── prédiction
+if st.button("Catégoriser", type="primary") and texte.strip():
+    X = vec.transform([texte])
     v_img, ms_img = vecteur_image(uniq_id=None if televerse else uniq, fichier=televerse)
-    p_fusion = ms_fusion = None
-    if fusion is not None and v_img is not None:
+
+    resultats: dict[str, tuple] = {}  # nom -> (proba, ms, version)
+
+    modele, version = modeles["Texte seul"]
+    t0 = time.perf_counter()
+    p = modele.predict_proba(X)[0]
+    resultats["Texte seul"] = (p, (time.perf_counter() - t0) * 1000, version)
+
+    if v_img is not None:
         from scipy.sparse import csr_matrix, hstack
         from sklearn.preprocessing import normalize
 
-        t0 = time.perf_counter()
-        F = hstack([X, csr_matrix(normalize(v_img.reshape(1, -1)))]).tocsr()
-        p_fusion = fusion.predict_proba(F)[0]
-        ms_fusion = (time.perf_counter() - t0) * 1000 + ms_img
+        img_norme = normalize(v_img.reshape(1, -1))
 
-    def bloc(titre, proba, ms, version):
-        i = int(proba.argmax())
-        cat, conf = labels[i], float(proba[i])
-        st.markdown(f"**{titre}**")
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Catégorie", cat if conf >= seuil else "En revue")
-        c2.metric("Confiance", f"{conf:.1%}")
-        c3.metric("Inférence", f"{ms:.1f} ms")
-        if conf < seuil:
-            st.warning(
-                f"Confiance sous {seuil:.0%} : l'article est mis en attente plutôt que "
-                f"classé à tort. La proposition serait « {cat} »."
+        if "Image seule" in modeles:
+            modele, version = modeles["Image seule"]
+            t0 = time.perf_counter()
+            p = modele.predict_proba(img_norme)[0]
+            resultats["Image seule"] = (
+                p,
+                (time.perf_counter() - t0) * 1000 + ms_img,
+                version,
             )
-        else:
-            st.success(f"Suggestion : **{cat}** — modifiable par le vendeur.")
-        st.caption(f"Modèle `{version}`")
-        return cat
 
-    ca, cb = st.columns(2)
-    with ca:
-        cat_texte = bloc("Texte seul", p_texte, ms_texte, v_texte)
-    with cb:
-        if p_fusion is not None:
-            cat_fusion = bloc("Texte + image", p_fusion, ms_fusion, v_fusion)
-        else:
-            st.markdown("**Texte + image**")
-            st.info("Fournir une photographie pour activer la fusion.")
-            cat_fusion = None
+        if "Texte + image" in modeles:
+            modele, version = modeles["Texte + image"]
+            t0 = time.perf_counter()
+            p = modele.predict_proba(hstack([X, csr_matrix(img_norme)]).tocsr())[0]
+            resultats["Texte + image"] = (
+                p,
+                (time.perf_counter() - t0) * 1000 + ms_img,
+                version,
+            )
 
-    if st.session_state.get("texte") == texte and "vrai" in st.session_state:
-        vrai = st.session_state["vrai"]
-        parts = [
-            f"Catégorie réelle : **{vrai}**",
-            "texte " + ("correct" if cat_texte == vrai else "erroné"),
-        ]
-        if cat_fusion is not None:
-            parts.append("fusion " + ("correcte" if cat_fusion == vrai else "erronée"))
-        st.caption(" — ".join(parts))
+    vrai = st.session_state.get("vrai") if st.session_state.get("texte") == texte else None
 
-    st.subheader("Distribution des probabilités")
-    d = {"texte seul": p_texte}
-    if p_fusion is not None:
-        d["texte + image"] = p_fusion
-    st.bar_chart(pd.DataFrame(d, index=labels))
+    st.markdown("### Ce que chaque modèle propose")
+    colonnes = st.columns(len(resultats))
+    verdicts = {}
+    for col, (nom, (proba, ms, version)) in zip(colonnes, resultats.items(), strict=True):
+        i = int(proba.argmax())
+        categorie, confiance = labels[i], float(proba[i])
+        verdicts[nom] = categorie
+        with col:
+            st.markdown(
+                f"<span style='display:inline-block;width:10px;height:10px;border-radius:2px;"
+                f"background:{COULEURS[nom]};margin-right:6px'></span>**{nom}**",
+                unsafe_allow_html=True,
+            )
+            st.metric(
+                "Catégorie" if confiance >= seuil else "Catégorie · sous le seuil",
+                categorie if confiance >= seuil else "En revue",
+                delta=f"{confiance:.0%} de confiance",
+                delta_color="normal" if confiance >= seuil else "inverse",
+            )
+            if confiance < seuil:
+                st.caption(f"Proposition retenue si le seuil baissait : « {categorie} »")
+            st.caption(f"{ms:.1f} ms · modèle `{version}`")
+            if vrai:
+                st.caption("✓ correct" if categorie == vrai else "✗ erroné")
 
-# ---------------------------------------------------------------- benchmark
-with st.expander("Le benchmark"):
+    if vrai:
+        justes = [n for n, c in verdicts.items() if c == vrai]
+        st.info(
+            f"**Catégorie réelle : {vrai}** — "
+            + (f"trouvée par : {', '.join(justes)}." if justes else "aucun modèle ne la trouve.")
+        )
+
+    st.markdown("### Probabilité attribuée à chaque catégorie")
+    st.caption(
+        "Une barre par modèle et par catégorie. Les barres ne sont pas empilées : "
+        "additionner les probabilités de deux modèles n'aurait aucun sens."
+        + (" Le trait pointillé marque la catégorie réelle." if vrai else "")
+    )
+    st.altair_chart(
+        graphe_probabilites({n: r[0] for n, r in resultats.items()}, vrai),
+        use_container_width=True,
+    )
+
+# ─────────────────────────────────────────────────────────────── benchmark
+with st.expander("Le benchmark complet"):
     p = ROOT / "reports" / "benchmark.csv"
     if p.exists():
         st.dataframe(pd.read_csv(p), use_container_width=True, hide_index=True)
