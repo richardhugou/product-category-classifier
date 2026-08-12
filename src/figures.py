@@ -1,4 +1,4 @@
-"""Les figures du projet.
+"""Les quatre figures du projet.
 
     python -m src.figures
 
@@ -14,6 +14,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.colors import LinearSegmentedColormap
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORTS = ROOT / "reports"
@@ -24,6 +25,8 @@ INK_2 = "#52514e"
 GOOD = "#0ca30c"  # statut : franchit le seuil
 CRITICAL = "#d03b3b"  # statut : ne le franchit pas
 GRID = "#e0dfdb"
+
+SEUIL = 0.90
 
 plt.rcParams.update(
     {
@@ -42,6 +45,131 @@ plt.rcParams.update(
 )
 
 
+def fig1(df: pd.DataFrame) -> None:
+    """Performance contre coût d'inférence. Le seuil métier est la ligne de référence."""
+    d = df.dropna(subset=["F1 macro", "Inférence (ms/article)"]).copy()
+    fig, ax = plt.subplots(figsize=(9.5, 5.4))
+
+    ax.axhline(SEUIL, color=INK_2, lw=1.2, ls="--", zorder=1)
+    ax.text(
+        0.45,
+        SEUIL + 0.004,
+        f"seuil métier · F1 macro ≥ {SEUIL:.2f}",
+        color=INK_2,
+        fontsize=10,
+        va="bottom",
+        ha="left",
+    )
+
+    # Placement des étiquettes à la main : 4 points, aucune collision tolérée.
+    OFFSETS = {
+        "TF-IDF + MLP": (0, 26),
+        "TF-IDF + XGBoost": (0, -46),
+        "BERT figé (2018)": (0, -46),
+        "ModernBERT figé (2024)": (0, -46),
+        "DINOv2 figé — image seule": (-98, 12),
+        "Fusion texte + image": (0, 26),
+    }
+    for _, r in d.iterrows():
+        passe = r["F1 macro"] >= SEUIL
+        ax.scatter(
+            r["Inférence (ms/article)"],
+            r["F1 macro"],
+            s=190,
+            color=GOOD if passe else CRITICAL,
+            alpha=0.9,
+            edgecolor=SURFACE,
+            linewidth=2,
+            zorder=3,
+        )
+        ax.annotate(
+            f"{r['Modèle']}\n{r['Empreinte (Mo)']:.0f} Mo · {r['Entraînement (s)']:.1f} s",
+            (r["Inférence (ms/article)"], r["F1 macro"]),
+            textcoords="offset points",
+            xytext=OFFSETS.get(r["Modèle"], (0, 26)),
+            ha="center",
+            fontsize=9.5,
+            color=INK,
+            linespacing=1.5,
+            zorder=4,
+        )
+
+    ax.set_xscale("log")
+    ax.set_xlim(0.025, 150)
+    ax.set_ylim(0.855, 0.995)
+    ax.set_xlabel("Temps d'inférence par article — ms, échelle logarithmique")
+    ax.set_ylabel("F1 macro")
+    ax.grid(axis="y", color=GRID, lw=0.8, zorder=0)
+    ax.set_title(
+        "La fusion gagne 3 points de F1 — pour 600 fois le coût d'inférence",
+        fontsize=13,
+        fontweight="bold",
+        pad=16,
+        loc="left",
+    )
+    fig.text(
+        0.008,
+        0.012,
+        "Vert : franchit le seuil métier.  Rouge : ne le franchit pas.  Encodeurs figés, "
+        "sans réglage fin.\n158 articles de test jamais vus.  Les lignes image incluent "
+        "l'encodage de la photographie dans le coût d'inférence.",
+        fontsize=9,
+        color=INK_2,
+    )
+    fig.tight_layout(rect=(0, 0.075, 1, 1))
+    fig.savefig(REPORTS / "fig1_cout.png", dpi=200)
+    print("→ reports/fig1_cout.png")
+
+
+def fig2(per_class: dict) -> None:
+    """F1 par classe — révèle les catégories que 2024 annonçait comme confuses."""
+    m = pd.DataFrame(per_class)
+    m = m.loc[m.mean(axis=1).sort_values().index]  # les plus faibles en haut
+
+    ramp = LinearSegmentedColormap.from_list(
+        "blue", ["#cde2fb", "#9ec5f4", "#5598e7", "#2a78d6", "#1c5cab", "#0d366b"]
+    )
+    fig, ax = plt.subplots(figsize=(11.5, 4.8))
+    im = ax.imshow(m.values, cmap=ramp, vmin=0.78, vmax=1.0, aspect="auto")
+
+    ax.set_xticks(range(len(m.columns)))
+    ax.set_xticklabels(
+        [c.replace(" figé (", "\nfigé ").replace(")", "") for c in m.columns], fontsize=9.5
+    )
+    ax.set_yticks(range(len(m.index)))
+    ax.set_yticklabels(m.index, fontsize=10)
+    ax.set_xticks(np.arange(-0.5, len(m.columns), 1), minor=True)
+    ax.set_yticks(np.arange(-0.5, len(m.index), 1), minor=True)
+    ax.grid(which="minor", color=SURFACE, lw=2)
+    ax.tick_params(which="minor", length=0)
+
+    for i in range(m.shape[0]):
+        for j in range(m.shape[1]):
+            v = m.values[i, j]
+            ax.text(
+                j,
+                i,
+                f"{v:.2f}",
+                ha="center",
+                va="center",
+                fontsize=10,
+                color="#ffffff" if v > 0.93 else INK,
+            )
+
+    ax.set_title(
+        "F1 par catégorie — l'image répare exactement les classes que le texte rate",
+        fontsize=12.5,
+        fontweight="bold",
+        pad=14,
+        loc="left",
+    )
+    fig.colorbar(im, ax=ax, shrink=0.72, label="F1")
+    fig.tight_layout()
+    fig.savefig(REPORTS / "fig2_f1_par_classe.png", dpi=200)
+    print("→ reports/fig2_f1_par_classe.png")
+
+
+# ---------------------------------------------------------------- fig 3 & 4
 
 BLEU_CLAIR, BLEU, BLEU_FONCE = "#cde2fb", "#2a78d6", "#0d366b"
 
@@ -209,7 +337,9 @@ def fig4() -> None:
 
 
 def toutes() -> None:
-    """Regénère les figures descriptives."""
+    """Regénère les quatre figures depuis les artefacts de reports/."""
+    fig1(pd.read_csv(REPORTS / "benchmark.csv"))
+    fig2(json.loads((REPORTS / "f1_par_classe.json").read_text(encoding="utf-8")))
     fig3()
     fig4()
 
