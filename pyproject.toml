@@ -22,6 +22,10 @@ ignore = ["E501"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q --strict-markers"
+# La racine doit être sur le chemin d'import, sinon `pytest` nu ne trouve pas
+# `src`. En local `python -m pytest` ajoute le répertoire courant et masquait
+# le problème ; l'intégration continue lance `pytest` et l'a révélé.
+pythonpath = ["."]
 markers = [
     "encoders: nécessite torch et transformers, exclu de l'intégration continue",
     "images: nécessite les photographies dans data/Flipkart/Images",
