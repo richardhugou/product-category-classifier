@@ -5,11 +5,13 @@ Les axes rapportés ne sont pas seulement la performance : le temps
 d'entraînement, le temps d'inférence **de bout en bout** et l'empreinte
 déployée décident autant, et souvent plus.
 
-    python benchmark.py
+    python benchmark.py             # texte classique — socle, sans torch
+    python benchmark.py --encoders  # + BERT et ModernBERT figés
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 import time
@@ -41,7 +43,7 @@ def _chronometrer(fn):
     return resultat, time.perf_counter() - t0
 
 
-def main() -> None:
+def main(avec_encodeurs: bool) -> None:
     REPORTS.mkdir(exist_ok=True)
     MODELS.mkdir(exist_ok=True)
 
@@ -109,6 +111,35 @@ def main() -> None:
         (MODELS / "tfidf_mlp.joblib").stat().st_size / 1e6,
     )
 
+    # ------------------------------------------------- encodeurs de texte figés
+    if avec_encodeurs:
+        from sklearn.linear_model import LogisticRegression
+
+        from src.text import ENCODEURS, charger_encodeur, empreinte_mo, encoder
+
+        print("\nEncodeurs de texte figés — même tête, même découpe")
+        for nom, model_id in ENCODEURS.items():
+            try:
+                # Le chargement du modèle est un coût de démarrage, pas d'inférence.
+                tok, mdl, device = charger_encodeur(model_id)
+                mo = empreinte_mo(mdl)
+
+                def entrainer(tok=tok, mdl=mdl, device=device):
+                    E = encoder(txt_tr, tok, mdl, device)
+                    tete = LogisticRegression(max_iter=2000, random_state=SEED)
+                    tete.fit(E, y_tr)
+                    return tete
+
+                tete, t = _chronometrer(entrainer)
+                pred, t_inf = _chronometrer(
+                    lambda tete=tete, tok=tok, mdl=mdl, device=device: tete.predict(
+                        encoder(txt_te, tok, mdl, device)
+                    )
+                )
+                ajouter(nom, pred, t, t_inf * 1000 / n_te, mo)
+            except Exception as e:  # réseau, poids indisponibles, mémoire
+                print(f"  {nom:30s} ÉCHEC — {type(e).__name__}: {str(e)[:80]}")
+
     # ------------------------------------------------------------- sorties
     par_classe = {ligne["Modèle"]: ligne.pop("_par_classe") for ligne in lignes}
     tableau = pd.DataFrame(lignes).sort_values("F1 macro", ascending=False)
@@ -122,4 +153,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--encoders", action="store_true", help="BERT et ModernBERT figés")
+    a = p.parse_args()
+    main(a.encoders)
