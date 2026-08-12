@@ -1,0 +1,8 @@
+# Encodeurs pré-entraînés — texte (BERT, ModernBERT) et image (DINOv2).
+# Environ 1,4 Go de poids au premier lancement. Volontairement séparé du socle :
+# l'intégration continue n'en a pas besoin, et l'installation coûterait plusieurs
+# minutes par exécution.
+-r requirements.txt
+torch==2.13.0
+torchvision==0.28.0
+transformers==5.15.0
