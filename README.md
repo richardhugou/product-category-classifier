@@ -1,164 +1,125 @@
-# Catégorisation automatique d'articles
+# Classification automatique d'articles de marketplace
 
-Classer une fiche produit dans la bonne catégorie, à partir de sa description et de sa photographie.
-Six approches comparées à protocole constant — et la question n'est pas « laquelle gagne » mais
-**« ce qu'elle coûte »**.
+Étude de faisabilité : les descriptions et les photographies déjà fournies par les vendeurs
+permettent-elles de retrouver automatiquement la catégorie d'un article ?
 
 [![ci](https://github.com/richardhugou/product-category-classifier/actions/workflows/ci.yml/badge.svg)](https://github.com/richardhugou/product-category-classifier/actions/workflows/ci.yml)
+
+**→ [Le rapport complet](docs/RAPPORT.md)**
 
 ---
 
 ## Le problème
 
-Sur une place de marché, la catégorie d'un article est choisie par le vendeur. C'est manuel, donc
-faux une fois sur combien ? Un article mal rangé est un article introuvable : invendu côté vendeur,
-invisible côté acheteur. Le problème n'a rien de spécifique au commerce en ligne — tickets de
-support, documents, réclamations, pièces détachées : toute organisation range des objets dans des
-catégories.
+Sur une marketplace, chaque vendeur choisit lui-même la catégorie de son article au moment de la mise
+en ligne. Sur un petit catalogue, cela tient. À mesure que le volume augmente, deux vendeurs classent
+des produits semblables à deux endroits différents, et un article mal rangé devient introuvable :
+l'acheteur qui filtre par catégorie ne le voit pas, et le vendeur n'apprend jamais pourquoi il ne
+vend pas.
 
-## Le résultat
+Le jeu d'étude compte 1 050 produits, 7 catégories de 150 produits, une description en anglais et une
+photographie par article.
 
-| Approche | F1 macro | F1 classe la plus faible | Entraînement | Inférence | Empreinte | Seuil métier |
-|---|---|---|---|---|---|---|
-| **Fusion texte + image** | **0,974** | **0,955** | 1,9 s | 35,8 ms | 365 Mo | ✅ |
-| TF-IDF + MLP | 0,943 | 0,870 | **0,5 s** | **0,06 ms** | 14 Mo | ✅ |
-| DINOv2 figé — image seule | 0,937 | 0,864 | 0,2 s | 35,7 ms | 346 Mo | ✅ |
-| BERT figé (2018) | 0,924 | 0,870 | 16,8 s | 22,0 ms | 438 Mo | ✅ |
-| TF-IDF + XGBoost | 0,923 | 0,837 | 4,6 s | 0,08 ms | **2,6 Mo** | ✅ |
-| ModernBERT figé (2024) | 0,885 | 0,800 | 29,1 s | 38,9 ms | 596 Mo | ❌ |
+## Ce que l'étude établit
 
-![Performance contre coût d'inférence](reports/fig1_cout.png)
+**Les catégories sont déjà présentes dans les données.** Sans montrer une seule étiquette, on projette
+les produits en deux dimensions, on laisse un K-means former sept groupes, et on compare ces groupes
+aux vraies catégories avec l'indice de Rand ajusté.
 
-Le seuil métier — F1 macro ≥ 0,90 — a été **fixé avant toute mesure**. Cinq approches sur six le
-franchissent : la performance les sépare de moins de 9 centièmes, alors que leur coût d'inférence
-varie d'un facteur 600. **La performance ne permet pas de choisir, le coût si.**
-
-**La fusion gagne 3 points de F1 macro, et 8 points sur la catégorie la plus faible** — de 0,870 à
-0,955. L'image répare précisément les classes que le texte confond.
-
-![F1 par catégorie](reports/fig2_f1_par_classe.png)
-
-Sur 158 articles de test, **7 sont rattrapés par la photographie** : le texte les classe mal, la
-fusion les classe bien. Un lange décrit en termes de matière et de dimensions passe pour un article
-d'ameublement ; sa photographie ne laisse aucun doute.
-
-### Ce que ce résultat ne dit pas
-
-Les encodeurs sont utilisés **figés**, sans réglage fin. Ce qui est mesuré est **une représentation,
-pas la capacité d'un modèle** — un BERT réglé finement changerait probablement le classement.
-
-Et le verdict sur les encodeurs figés **dépend de la modalité**, ce qui est un résultat en soi :
-DINOv2 est entraîné en auto-supervision précisément pour produire de bonnes représentations figées,
-et il tient ses promesses ; un modèle de langage masqué dont on moyenne les jetons n'a jamais été
-entraîné pour ça, et il déçoit. « Encodeur pré-entraîné figé » n'est pas une catégorie homogène.
-
-## Du modèle à la décision — le seuil de confiance
-
-Le modèle ne tranche que s'il dépasse un seuil ; en dessous, l'article part en revue humaine.
-
-| Seuil | Fusion — couverture | Fusion — erreurs | Texte seul — couverture | Texte seul — erreurs |
+| Représentation | Source | Dimensions | Accord (projection) | Accord (espace complet) |
 |---|---|---|---|---|
-| 0,50 | 92,4 % | 1,4 % | 91,1 % | 2,8 % |
-| **0,60** | **82,9 %** | **aucune sur 131 articles** | 84,2 % | 2,3 % |
-| 0,70 | 71,5 % | aucune sur 113 | 76,6 % | 0,8 % |
-| 0,80 | 62,0 % | aucune sur 98 | 67,7 % | aucune sur 107 |
+| **CNN (VGG16)** | image | 512 | **0,510** | **0,540** |
+| USE | texte | 512 | 0,440 | 0,333 |
+| TF-IDF | texte | 5 000 | 0,325 | 0,214 |
+| Comptage + bigrammes | texte | 5 000 | 0,316 | 0,227 |
+| BERT | texte | 768 | 0,316 | 0,288 |
+| Comptage de mots | texte | 2 444 | 0,306 | 0,270 |
+| Word2Vec | texte | 300 | 0,300 | 0,207 |
+| SIFT | image | 256 | 0,044 | 0,056 |
 
-La fusion atteint zéro erreur observée **dès 0,60**, en couvrant 83 % du volume. Le modèle texte doit
-monter à 0,80 pour en faire autant, et ne couvre alors que 68 %.
+![Les sept projections](reports/fig5_projections.png)
 
-> On écrit « aucune erreur sur les 131 articles concernés », jamais « 100 % de précision » : sur cet
-> effectif, un taux nul est un intervalle de confiance, pas une garantie.
+Trois lectures. Sur les **mêmes photographies**, un réseau convolutif atteint 0,510 quand SIFT reste
+proche du hasard : SIFT décrit des motifs locaux, pas ce qu'est l'objet. Un **comptage simple de mots**
+fait pratiquement jeu égal avec BERT — sur des fiches de spécifications, le vocabulaire est très
+discriminant et la syntaxe presque absente. Et VGG16 est la seule représentation dont l'accord est
+**meilleur avant réduction qu'après** : sa structure ne doit rien à t-SNE.
 
-## Les carnets, dans l'ordre
+Un indice de 0,51 n'est pas une proportion de produits bien classés. C'est une mesure de
+correspondance entre deux partitions.
 
-Chaque carnet répond à une question et se lit sans exécuter le code — les sorties sont conservées.
+**En supervisé, à partir des seules images : 137 produits sur 158 correctement classés**, soit une F1
+macro de 0,867, avec un VGG16 figé et 735 images d'entraînement.
 
-| # | Carnet | La question posée |
-|---|---|---|
-| 01 | [Exploration et préparation](notebooks/01_eda_etl.ipynb) | Cette donnée mérite-t-elle qu'on lui fasse confiance ? |
-| 02 | [Visualisation](notebooks/02_visualisation.ipynb) | Les catégories se distinguent-elles ? |
-| 03 | [Modèles texte](notebooks/03_modele_texte.ipynb) | La description suffit-elle ? |
-| 04 | [Modèle image](notebooks/04_modele_image.ipynb) | La photographie apporte-t-elle ce qui manque ? |
-| 05 | [Modèle combiné](notebooks/05_modele_combine.ipynb) | Leur somme répare-t-elle les erreurs ? |
-| 06 | [Comparaison](notebooks/06_comparaison.ipynb) | Quoi mettre en production, et pourquoi ? |
+![Matrice de confusion](reports/fig8_confusion_image.png)
 
-Le carnet 01 documente deux arbitrages qui coûtent du score volontairement : l'exclusion du champ
-`brand`, dont l'absence prédisait la catégorie, et la reconnaissance que la vérité terrain est
-déclarative, donc bornée.
+La data augmentation a été comparée sur le jeu de validation avant tout accès au jeu réservé. Elle
+n'apporte pas d'amélioration nette — six millièmes de point, moins d'un produit sur 157 — et une
+augmentation forte et répétée dégrade la performance. Elle n'est pas pour autant sans effet : elle
+déplace les erreurs d'une catégorie à l'autre.
 
-## Les données
-
-1 050 fiches produit, **7 catégories exactement équilibrées** à 150 articles chacune, chacune avec
-une description en anglais et une photographie. L'équilibre des classes est parfait ; celui de
-l'information ne l'est pas — la description médiane va de 24 mots pour *Home Furnishing* à 88 pour
-*Kitchen & Dining*.
-
-![Le jeu de données](reports/fig4_donnees.png)
-
-![La chaîne de transformation](reports/fig3_transformations.png)
+**La confusion la plus tenace traverse les deux approches.** Les housses de coussin et les couettes se
+regroupent avec les serviettes et les pyjamas de bébé, sans étiquettes comme avec. L'algorithme
+regroupe par matière et mise en scène ; la nomenclature regroupe par usage commercial.
 
 ## Reproduire
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -r requirements-dev.txt
-make all
-```
-
-`make all` entraîne les modèles texte, écrit `reports/benchmark.csv` et regénère les figures. Une
-dizaine de secondes.
-
-Pour le tableau complet — encodeurs de texte, image et fusion. Le premier lancement télécharge
-environ 1,4 Go de poids, et attend les photographies dans `data/Flipkart/Images/` :
-
-```bash
 pip install -r requirements-encoders.txt
-make benchmark ENCODERS=1 IMAGES=1
+
+python faisabilite.py        # 7 représentations, projections 2D, K-means, ARI
+python supervise_image.py    # classification supervisée et data augmentation
+python collecte_api.py       # collecte « champagne » via Open Food Facts
 ```
 
-Les autres cibles : `make test`, `make lint`, `make notebooks`, `make demo`. `make help` les liste.
+Le socle seul (`requirements.txt`) suffit pour l'exploration et les modèles classiques ;
+`requirements-encoders.txt` ajoute les réseaux pré-entraînés, environ 3 Go de poids au premier
+lancement. Les caractéristiques extraites sont mises en cache : une seconde exécution ne recalcule ni
+SIFT ni VGG16.
+
+Autres cibles : `make test`, `make lint`, `make notebooks`, `make help`.
 
 ## Structure
 
 ```
 ├── src/
-│   ├── pipeline.py      chargement et découpe — source unique, appelée partout
-│   ├── text.py          TF-IDF et encodeurs de texte figés
-│   ├── images.py        caractéristiques visuelles, mises en cache
-│   ├── fusion.py        concaténation après normalisation L2 ligne par ligne
-│   ├── evaluate.py      métriques et arbitrage au seuil
-│   └── figures.py       les quatre figures
-├── notebooks/           les six carnets, exécutés
-├── tests/               21 tests, dont le test anti-fuite
-├── scripts/             profilage, rejeu des carnets
-├── benchmark.py         les six approches, protocole constant
-├── app.py               démonstration — texte seul et fusion, côte à côte
-└── docs/RAPPORT.md      rapport de conduite de projet
+│   ├── pipeline.py          chargement et découpe — source unique, appelée partout
+│   ├── pretraitement.py     nettoyage du texte, harmonisation des images
+│   ├── representations.py   les 7 représentations imposées par la mission
+│   ├── faisabilite.py       projection ACP + t-SNE, K-means, indice de Rand ajusté
+│   ├── supervise_image.py   socle VGG16 figé, data augmentation, tête de classification
+│   ├── text.py              TF-IDF et encodeurs de texte
+│   ├── images.py            caractéristiques visuelles, mises en cache
+│   ├── fusion.py            concaténation après normalisation L2
+│   ├── evaluate.py          métriques
+│   └── figures.py           figures d'exploration
+├── faisabilite.py           étude de faisabilité — première demande
+├── supervise_image.py       classification supervisée — deuxième demande
+├── collecte_api.py          collecte via API — troisième demande
+├── notebooks/               les carnets, exécutés
+├── tests/                   23 tests, dont le test anti-fuite
+└── docs/RAPPORT.md          le rapport
 ```
 
 **Une seule chose découpe les données** : `src/pipeline.py`, en 70 / 15 / 15 stratifié à graine fixe.
-Les carnets, le benchmark et la démonstration l'appellent tous. C'est ce qui garantit que les
-chiffres se comparent entre eux, et `tests/test_pipeline.py` vérifie que les trois plis sont
-disjoints — le test anti-fuite du projet.
+Tous les scripts l'appellent, ce qui garantit que les chiffres se comparent entre eux, et
+`tests/test_pipeline.py` vérifie que les trois parts sont disjointes.
+
+## En marge de la mission
+
+Le dépôt contient aussi une comparaison d'approches combinant texte et image (`benchmark.py`), une
+exploration d'hyperparamètres (`optimize.py`) et une application de démonstration (`app.py`). Ces
+travaux dépassent le périmètre de l'étude demandée et ne sont pas repris dans le rapport, hors d'une
+mention en perspectives.
 
 ## Organisation du dépôt
 
-`main` porte les versions publiées, `develop` intègre, et chaque lot de travail a vécu sur sa propre
-branche avant d'être fusionné :
-
-```
-feature/cicd · feature/eda-etl · feature/visualisation
-feature/text-embedding · feature/image-embedding · feature/combined-embedding
-feature/model-comparison · feature/demo-app · feature/documentation
-```
-
-L'intégration continue tourne sur `main`, `develop` et toute branche `feature/**` : lint, format,
-tests, puis un travail de vérification qui rejoue le profilage et le benchmark texte depuis un clone
-propre. Les encodeurs pré-entraînés en sont exclus — 1,4 Go de poids par exécution serait
-disproportionné.
+`main` porte les versions publiées, `develop` intègre, et chaque lot de travail vit sur sa propre
+branche avant d'être fusionné. L'intégration continue tourne sur `main`, `develop` et toute branche
+`feature/**` : lint, format, tests, puis un rejeu de la chaîne depuis un clone propre. Les réseaux
+pré-entraînés en sont exclus — plusieurs gigaoctets de poids par exécution seraient disproportionnés.
 
 ## Licence
 
-MIT — voir [LICENSE](LICENSE). Jeu Flipkart de 1 050 produits, distribué sans contrainte de propriété
-intellectuelle dans le cadre d'un exercice de faisabilité. Le CSV est versionné ici ; les
-photographies ne le sont pas — 351 Mo — et se placent dans `data/Flipkart/Images/`.
+MIT.
