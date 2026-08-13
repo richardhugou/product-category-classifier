@@ -1,7 +1,8 @@
 """Chargement, découpe et vérité terrain — source unique pour le benchmark et l'application.
 
-Découpe identique à l'étude de 2024 : 70 / 15 / 15 stratifiée, graine 42.
-Aucune logique métier ailleurs : le benchmark et l'app appellent ce module.
+Découpe 70 / 15 / 15 stratifiée, graine 42. Aucune logique métier ailleurs :
+tous les scripts et carnets appellent ce module, ce qui garantit que leurs
+chiffres se comparent entre eux.
 """
 
 from __future__ import annotations
