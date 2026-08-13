@@ -1,0 +1,5 @@
+Modèle,Exactitude,F1 macro,F1 classe la plus faible,Classe la plus faible,Images d'entraînement
+Sans augmentation,0.8734,0.8735,0.7907,Baby Care,735
+Augmentation douce ×4,0.8671,0.8671,0.8095,Computers,3675
+Augmentation forte ×4,0.8671,0.8668,0.7907,Baby Care,3675
+Augmentation forte ×8,0.8354,0.8354,0.75,Baby Care,6615

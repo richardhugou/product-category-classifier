@@ -49,7 +49,7 @@ def _socle(device: str):
     )
 
 
-def transformations(augmenter: bool):
+def transformations(intensite: str):
     """Les transformations appliquées aux images d'entraînement.
 
     Le choix est contraint par la nature des photographies : des produits de
@@ -57,11 +57,23 @@ def transformations(augmenter: bool):
     de légères rotations restent plausibles — un même article peut être
     photographié dans l'autre sens. Le retournement vertical, lui, produirait
     des images qu'on ne rencontrera jamais, et n'est pas retenu.
+
+    Deux intensités sont proposées, et la comparaison des deux fait partie du
+    résultat. Conclure qu'une augmentation n'apporte rien à partir d'un seul
+    réglage laisserait ouverte l'objection qu'il était mal choisi.
     """
     from torchvision import transforms
 
-    if not augmenter:
+    if intensite == "aucune":
         return transforms.Compose([transforms.Resize((TAILLE, TAILLE))])
+    if intensite == "douce":
+        return transforms.Compose(
+            [
+                transforms.Resize((TAILLE, TAILLE)),
+                transforms.RandomHorizontalFlip(p=0.5),
+                transforms.RandomRotation(10, fill=255),
+            ]
+        )
     return transforms.Compose(
         [
             transforms.RandomResizedCrop(TAILLE, scale=(0.75, 1.0), ratio=(0.85, 1.18)),
@@ -72,7 +84,7 @@ def transformations(augmenter: bool):
     )
 
 
-def extraire(uniq_ids: list[str], augmenter: bool = False, copies: int = 1):
+def extraire(uniq_ids: list[str], intensite: str = "aucune", copies: int = 1):
     """Caractéristiques VGG16 des images désignées.
 
     Avec `copies > 1`, chaque image produit plusieurs variantes augmentées.
@@ -87,7 +99,7 @@ def extraire(uniq_ids: list[str], augmenter: bool = False, copies: int = 1):
 
     device = _appareil()
     reseau, moyenne, ecart = _socle(device)
-    transformer = transformations(augmenter)
+    transformer = transformations(intensite)
     torch.manual_seed(SEED)
 
     sorties, index = [], []

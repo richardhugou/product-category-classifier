@@ -58,29 +58,37 @@ def main(copies: int) -> None:
     print(f"  {X_tr.shape[0]} images d'entraînement · {X_tr.shape[1]} dimensions")
     print(f"  {time.perf_counter() - t0:.0f} s\n")
 
-    resultats = []
+    # Une seule augmentation testée ne prouverait rien : un mauvais résultat
+    # s'expliquerait aussi bien par un réglage trop brutal. On fait varier
+    # l'intensité et le nombre de variantes, et c'est la tendance qui parle.
+    essais = [
+        ("Sans augmentation", "aucune", 0),
+        (f"Augmentation douce ×{copies}", "douce", copies),
+        (f"Augmentation forte ×{copies}", "forte", copies),
+        (f"Augmentation forte ×{2 * copies}", "forte", 2 * copies),
+    ]
 
-    print("Sans augmentation")
-    clf = tete().fit(X_tr, y_tr)
-    pred_sans = clf.predict(X_te)
-    resultats.append(_mesurer("VGG16 figé + tête", y_te, pred_sans, etiquettes))
-    print(
-        f"  F1 macro {resultats[-1]['F1 macro']:.4f} · exactitude {resultats[-1]['Exactitude']:.4f}"
-    )
+    resultats, predictions = [], {}
+    for nom, intensite, n in essais:
+        if n == 0:
+            X, y = X_tr, y_tr
+            duree = 0.0
+        else:
+            t0 = time.perf_counter()
+            X_aug, index = extraire(ids_tr, intensite=intensite, copies=n)
+            X = np.vstack([X_tr, X_aug])
+            y = np.concatenate([y_tr, y_tr[index]])
+            duree = time.perf_counter() - t0
 
-    print(f"\nAvec augmentation — {copies} variantes par image")
-    t0 = time.perf_counter()
-    X_aug, index = extraire(ids_tr, augmenter=True, copies=copies)
-    X_tr_aug = np.vstack([X_tr, X_aug])
-    y_tr_aug = np.concatenate([y_tr, y_tr[index]])
-    print(f"  {X_tr_aug.shape[0]} images après augmentation · {time.perf_counter() - t0:.0f} s")
-
-    clf_aug = tete().fit(X_tr_aug, y_tr_aug)
-    pred_avec = clf_aug.predict(X_te)
-    resultats.append(_mesurer("VGG16 figé + tête, augmenté", y_te, pred_avec, etiquettes))
-    print(
-        f"  F1 macro {resultats[-1]['F1 macro']:.4f} · exactitude {resultats[-1]['Exactitude']:.4f}"
-    )
+        pred = tete().fit(X, y).predict(X_te)
+        predictions[nom] = pred
+        ligne = _mesurer(nom, y_te, pred, etiquettes)
+        ligne["Images d'entraînement"] = int(X.shape[0])
+        resultats.append(ligne)
+        print(
+            f"  {nom:28s} {X.shape[0]:5d} images · F1 macro {ligne['F1 macro']:.4f}"
+            + (f" · {duree:.0f} s" if duree else "")
+        )
 
     # --- sorties
     par_classe = {r["Modèle"]: r.pop("_par_classe") for r in resultats}
@@ -90,9 +98,10 @@ def main(copies: int) -> None:
 
     courts = [e.replace(" & ", "\n& ").replace(" and ", "\n& ") for e in etiquettes]
     fig, (g, d) = plt.subplots(1, 2, figsize=(15, 6.5))
+    pire = max(resultats[1:], key=lambda r: r["Images d'entraînement"])["Modèle"]
     for axe, pred, titre in (
-        (g, pred_sans, "Sans augmentation"),
-        (d, pred_avec, f"Avec augmentation ({copies} variantes)"),
+        (g, predictions["Sans augmentation"], "Sans augmentation"),
+        (d, predictions[pire], pire),
     ):
         ConfusionMatrixDisplay.from_predictions(
             y_te,
@@ -107,6 +116,8 @@ def main(copies: int) -> None:
         axe.set_xlabel("Catégorie prédite")
         axe.set_ylabel("Catégorie réelle")
         axe.tick_params(labelsize=8)
+        # Sans rotation, « Home Decor » et « Home Furnishing » se chevauchent.
+        plt.setp(axe.get_xticklabels(), rotation=30, ha="right", rotation_mode="anchor")
     fig.suptitle(
         "Classification supervisée des images — 158 produits de test jamais vus", fontsize=13
     )
