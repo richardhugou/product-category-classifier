@@ -561,6 +561,7 @@ CARNETS_A_CONSTRUIRE = {
 
 def construire(sans_execution: bool) -> None:
     CARNETS.mkdir(exist_ok=True)
+    ecrits = []
     for nom, cellules in CARNETS_A_CONSTRUIRE.items():
         carnet = nbformat.v4.new_notebook(cells=cellules)
         carnet.metadata = {
@@ -569,7 +570,19 @@ def construire(sans_execution: bool) -> None:
         }
         chemin = CARNETS / nom
         nbformat.write(carnet, chemin)
+        ecrits.append(chemin)
         print(f"  écrit  {chemin.relative_to(ROOT)}  ({len(cellules)} cellules)")
+
+    # L'intégration continue vérifie le formatage des cellules de code au même
+    # titre que celui des fichiers Python. Le code des carnets étant écrit à la
+    # main dans ce fichier, on le normalise ici plutôt que de laisser la CI
+    # échouer sur des retours à la ligne.
+    import subprocess
+
+    subprocess.run(
+        [sys.executable, "-m", "ruff", "format", "--quiet", *map(str, ecrits)], check=False
+    )
+    print("  formaté")
 
     if sans_execution:
         print("\nConstruits sans exécution. `python scripts/run_notebooks.py` pour les exécuter.")
