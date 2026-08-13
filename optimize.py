@@ -90,8 +90,32 @@ def _grille_tfidf_utile(textes: list[str]) -> list[tuple[dict, int]]:
     return retenues
 
 
+def _par_representation(table: pd.DataFrame, colonne: str) -> pd.DataFrame:
+    """Performance moyenne de chaque représentation, à conception équilibrée.
+
+    À préférer aux effets marginaux pour tout ce qui touche la représentation.
+    La déduplication de la grille rend le plan déséquilibré — `max_features`
+    illimité ne survit que là où il change quelque chose, c'est-à-dire sur les
+    seules configurations à bigrammes — si bien que sa moyenne marginale est
+    confondue avec l'effet des bigrammes. Ici chaque représentation porte le
+    même nombre de configurations de tête, donc les moyennes se comparent.
+    """
+    groupes = table.groupby(["ngram_range", "min_df", "vocabulaire"])[colonne]
+    return (
+        groupes.agg(Moyenne="mean", Maximum="max", Configurations="count")
+        .round(4)
+        .reset_index()
+        .sort_values("Moyenne", ascending=False)
+    )
+
+
 def _effets_marginaux(table: pd.DataFrame, colonne: str, axes: list[str]) -> pd.DataFrame:
-    """Performance moyenne par valeur d'hyperparamètre, les autres confondus."""
+    """Performance moyenne par valeur d'hyperparamètre, les autres confondus.
+
+    Valable tant que le plan est équilibré sur l'axe considéré — c'est le cas
+    des réglages de la tête, qui apparaissent le même nombre de fois. Pour la
+    représentation, voir `_par_representation`.
+    """
     lignes = []
     for axe in axes:
         for valeur, groupe in table.groupby(axe, dropna=False):
@@ -198,12 +222,16 @@ def main(avec_images: bool, holdout: bool) -> None:
     axes_texte = ["ngram_range", "min_df", "max_features", "hidden_layer_sizes", "alpha"]
     marges = _effets_marginaux(table, "F1 macro", axes_texte)
     marges.to_csv(REPORTS / f"effets_marginaux_texte_{suffixe}.csv", index=False)
+    representations = _par_representation(table, "F1 macro")
+    representations.to_csv(REPORTS / f"representations_{suffixe}.csv", index=False)
 
     m = table.iloc[0]
     print(f"\n  {len(table)} combinaisons en {time.perf_counter() - t0:.0f} s")
     print(f"  meilleure : F1 {m['F1 macro']:.4f} ± {m['Écart-type']:.4f}")
     print(f"  étendue du classement : {table['F1 macro'].max() - table['F1 macro'].min():.4f}")
-    print("\n  Effets marginaux — ce qui compte vraiment :")
+    print("\n  Par représentation — plan équilibré, moyennes comparables :")
+    print(representations.to_string(index=False))
+    print("\n  Effets marginaux (à ne lire que pour les axes de la tête) :")
     print(marges.to_string(index=False))
 
     p_vec_best = {

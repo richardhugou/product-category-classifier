@@ -116,6 +116,14 @@ pip install -r requirements-encoders.txt
 make benchmark ENCODERS=1 IMAGES=1
 ```
 
+Pour l'exploration des hyperparamètres — sélection par validation croisée à cinq blocs, effets
+marginaux, et le mode `HOLDOUT=1` qui reproduit la sélection naïve dont le rapport montre qu'elle
+échoue :
+
+```bash
+make optimize
+```
+
 Les autres cibles : `make test`, `make lint`, `make notebooks`, `make demo`. `make help` les liste.
 
 ## Structure
@@ -129,11 +137,12 @@ Les autres cibles : `make test`, `make lint`, `make notebooks`, `make demo`. `ma
 │   ├── evaluate.py      métriques et arbitrage au seuil
 │   └── figures.py       les quatre figures
 ├── notebooks/           les six carnets, exécutés
-├── tests/               21 tests, dont le test anti-fuite
+├── tests/               23 tests, dont le test anti-fuite
 ├── scripts/             profilage, rejeu des carnets
 ├── benchmark.py         les six approches, protocole constant
+├── optimize.py          hyperparamètres — et critique de la méthode de sélection
 ├── app.py               démonstration — texte seul et fusion, côte à côte
-└── docs/RAPPORT.md      rapport de conduite de projet
+└── docs/RAPPORT.md      le rapport
 ```
 
 **Une seule chose découpe les données** : `src/pipeline.py`, en 70 / 15 / 15 stratifié à graine fixe.
