@@ -33,6 +33,20 @@ REPORTS = ROOT / "reports"
 # principales déficiences de vision des couleurs.
 PALETTE = ["#4c78a8", "#f58518", "#54a24b", "#e45756", "#b279a2", "#9d755d", "#79706e"]
 
+# La légende sous la figure doit suffire à comprendre ce qui est mesuré, sans
+# le texte du rapport. Un lecteur qui découvre le graphique seul doit savoir
+# sur quoi porte l'indice affiché — c'est la première question qu'on pose.
+LEGENDE = (
+    "Projection ACP + t-SNE. Les couleurs sont les catégories réelles ; l'ARI mesure l'accord "
+    "entre ces catégories et 7 groupes formés par K-means sans utiliser les étiquettes.\n"
+    "Les axes de t-SNE n'ont pas d'interprétation propre : seule la proximité entre points a un sens."
+)
+
+
+def _fr(x: float) -> str:
+    """Nombre décimal à la française, pour les figures du rapport."""
+    return f"{x:.3f}".replace(".", ",")
+
 
 def _nuage(axe, plan, valeurs, ordre, titre: str) -> None:
     for i, valeur in enumerate(ordre):
@@ -95,15 +109,29 @@ def main(texte_seul: bool) -> None:
     fig, axes = plt.subplots(lignes, colonnes, figsize=(4 * colonnes, 4 * lignes))
     for axe, nom in zip(axes.ravel(), noms, strict=False):
         ari = plans[nom]["ARI projection"]
-        _nuage(axe, plans[nom]["projection"], categories, ordre, f"{nom} — ARI {ari:.3f}")
+        _nuage(
+            axe,
+            plans[nom]["projection"],
+            categories,
+            ordre,
+            f"{nom} — ARI sur projection : {_fr(ari)}",
+        )
     for axe in axes.ravel()[len(noms) :]:
         axe.axis("off")
     poignees, etiquettes = axes.ravel()[0].get_legend_handles_labels()
     fig.legend(
-        poignees, etiquettes, loc="lower center", ncol=4, frameon=False, markerscale=2.5, fontsize=9
+        poignees,
+        etiquettes,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.075),
+        ncol=4,
+        frameon=False,
+        markerscale=2.5,
+        fontsize=9,
     )
+    fig.text(0.5, 0.012, LEGENDE, ha="center", va="bottom", fontsize=8.5, color="#555555")
     fig.suptitle("Projection des 1 050 produits — couleur : catégorie réelle", fontsize=13, y=0.99)
-    fig.tight_layout(rect=(0, 0.07, 1, 0.97))
+    fig.tight_layout(rect=(0, 0.13, 1, 0.97))
     fig.savefig(REPORTS / "fig5_projections.png", dpi=150)
     plt.close(fig)
 
@@ -117,10 +145,21 @@ def main(texte_seul: bool) -> None:
         etude["projection"],
         etude["groupes_projection"],
         sorted(set(etude["groupes_projection"])),
-        f"Groupes formés sans étiquettes — ARI {etude['ARI projection']:.3f}",
+        f"7 groupes K-means, sans étiquettes — ARI {_fr(etude['ARI projection'])}",
     )
     fig.suptitle(f"{meilleure} — ce que l'algorithme retrouve seul", fontsize=13)
-    fig.tight_layout()
+    fig.text(
+        0.5,
+        0.015,
+        "L'ARI compare les deux partitions ci-dessus. Il vaut 0 lorsque l'accord n'excède pas "
+        "le hasard et 1 lorsqu'elles coïncident ;\nce n'est pas une proportion de produits bien "
+        "classés.",
+        ha="center",
+        va="bottom",
+        fontsize=8.5,
+        color="#555555",
+    )
+    fig.tight_layout(rect=(0, 0.09, 1, 1))
     fig.savefig(REPORTS / "fig6_clusters.png", dpi=150)
     plt.close(fig)
 

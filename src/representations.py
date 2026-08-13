@@ -40,14 +40,32 @@ DIM_WORD2VEC = 300
 # --------------------------------------------------------------------- texte
 
 
-def comptage(textes: list[str]) -> np.ndarray:
-    """Sac de mots brut : combien de fois chaque terme apparaît."""
+def _sac_de_mots(textes: list[str], ngram: tuple[int, int]) -> np.ndarray:
     from sklearn.feature_extraction.text import CountVectorizer
 
     vec = CountVectorizer(
-        lowercase=True, stop_words="english", max_features=5000, ngram_range=(1, 2), min_df=2
+        lowercase=True, stop_words="english", max_features=5000, ngram_range=ngram, min_df=2
     )
     return vec.fit_transform(textes).toarray().astype(np.float32)
+
+
+def comptage(textes: list[str]) -> np.ndarray:
+    """Sac de mots au sens strict : combien de fois chaque mot apparaît.
+
+    Unigrammes seulement. C'est la référence la plus simple qu'on puisse
+    construire, et c'est à ce titre qu'elle sert : tout ce qui suit doit
+    justifier son coût par rapport à elle.
+    """
+    return _sac_de_mots(textes, (1, 1))
+
+
+def comptage_bigrammes(textes: list[str]) -> np.ndarray:
+    """Le même comptage, mots seuls et paires de mots.
+
+    Isole l'apport des bigrammes : seule cette option change par rapport à
+    `comptage`, donc l'écart entre les deux ne peut venir que d'eux.
+    """
+    return _sac_de_mots(textes, (1, 2))
 
 
 def tfidf(textes: list[str]) -> np.ndarray:
@@ -93,25 +111,48 @@ def bert(textes: list[str]) -> np.ndarray:
     return encoder(textes, tok, mdl, device).astype(np.float32)
 
 
+URL_USE = "https://tfhub.dev/google/universal-sentence-encoder/4"
+
+# Encodage USE, exécuté dans un interpréteur qui n'a jamais importé PyTorch.
+_SCRIPT_USE = """
+import json, sys
+import numpy as np
+import tensorflow_hub as hub
+
+textes = json.load(open(sys.argv[1], encoding="utf-8"))
+modele = hub.load({url!r})
+vecteurs = np.vstack([modele(textes[i:i + 32]).numpy() for i in range(0, len(textes), 32)])
+np.save(sys.argv[2], vecteurs.astype(np.float32))
+"""
+
+
 def use(textes: list[str]) -> np.ndarray:
-    """Universal Sentence Encoder — un encodeur entraîné pour la phrase entière.
+    """Universal Sentence Encoder — l'implémentation de référence.
 
-    On tente d'abord l'implémentation de référence (TensorFlow Hub). À défaut,
-    on retombe sur sa distillation publiée pour PyTorch, qui poursuit le même
-    objectif d'entraînement. La substitution éventuelle est signalée à l'écran
-    et doit l'être dans le rapport.
+    C'est bien le modèle publié par Google sur TensorFlow Hub, et non une
+    distillation approchante : la mission le nomme explicitement.
+
+    L'encodage est délégué à un sous-processus, pour une raison très concrète.
+    Chargé dans un interpréteur ayant déjà importé PyTorch — ce que font BERT,
+    SIFT et VGG16 — TensorFlow se bloque sur cette machine : le processus reste
+    figé indéfiniment, sans lever la moindre erreur. Isolé, il charge le modèle
+    en deux secondes. Le sous-processus n'importe donc que TensorFlow, écrit le
+    résultat sur disque, et rend la main.
     """
-    try:
-        import tensorflow_hub as hub  # type: ignore
+    import json
+    import subprocess
+    import sys
+    import tempfile
 
-        modele = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
-        return np.vstack([modele(textes[i : i + 32]).numpy() for i in range(0, len(textes), 32)])
-    except Exception as e:  # paquet absent, réseau indisponible, mémoire
-        print(f"    USE de référence indisponible ({type(e).__name__}) — distillation PyTorch")
-        from sentence_transformers import SentenceTransformer
-
-        modele = SentenceTransformer("sentence-transformers/distiluse-base-multilingual-cased-v1")
-        return modele.encode(textes, batch_size=32, show_progress_bar=False).astype(np.float32)
+    with tempfile.TemporaryDirectory() as dossier:
+        entree = Path(dossier) / "textes.json"
+        sortie = Path(dossier) / "use.npy"
+        entree.write_text(json.dumps(textes), encoding="utf-8")
+        subprocess.run(
+            [sys.executable, "-c", _SCRIPT_USE.format(url=URL_USE), str(entree), str(sortie)],
+            check=True,
+        )
+        return np.load(sortie)
 
 
 # --------------------------------------------------------------------- image
@@ -192,6 +233,7 @@ def cnn(uniq_ids: list[str]) -> np.ndarray:
 
 TEXTE = {
     "Comptage de mots": comptage,
+    "Comptage + bigrammes": comptage_bigrammes,
     "TF-IDF": tfidf,
     "Word2Vec": word2vec,
     "BERT": bert,
