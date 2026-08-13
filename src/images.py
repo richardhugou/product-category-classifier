@@ -1,10 +1,9 @@
 """Caractéristiques visuelles — encodeur figé, mises en cache sur disque.
 
-L'étude de 2024 extrayait des caractéristiques avec un réseau convolutif
-pré-entraîné sur ImageNet. On reprend le même principe avec un encodeur conçu
-pour cet usage : DINOv2 est entraîné en auto-supervision précisément pour
-produire de bonnes représentations **figées**, ce qui n'est pas le cas d'un
-modèle de langage masqué dont on moyennerait les jetons.
+Complément aux caractéristiques VGG16 de l'étude : DINOv2 est entraîné en
+auto-supervision précisément pour produire de bonnes représentations **figées**,
+ce qui n'est pas le cas d'un modèle de langage masqué dont on moyennerait les
+jetons. Hors du périmètre de la mission, qui impose un réseau convolutif.
 
 Représentation retenue : jeton de classe concaténé à la moyenne des jetons de
 patch — le protocole d'évaluation linéaire de DINOv2.

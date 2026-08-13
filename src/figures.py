@@ -122,7 +122,7 @@ def fig1(df: pd.DataFrame) -> None:
 
 
 def fig2(per_class: dict) -> None:
-    """F1 par classe — révèle les catégories que 2024 annonçait comme confuses."""
+    """F1 par classe — révèle les catégories que les modèles confondent."""
     m = pd.DataFrame(per_class)
     m = m.loc[m.mean(axis=1).sort_values().index]  # les plus faibles en haut
 
@@ -325,7 +325,7 @@ def fig4() -> None:
     fig.text(
         0.008,
         0.015,
-        f"Découpe stratifiée 70 / 15 / 15, graine 42 — identique à 2024 : "
+        f"Découpe stratifiée 70 / 15 / 15, graine 42 : "
         f"{len(tr)} entraînement · {len(va)} validation · {len(te)} test.  "
         "Médiane globale 44 mots ; 24 pour Home Furnishing, 88 pour Kitchen & Dining.",
         fontsize=9,

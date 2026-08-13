@@ -613,6 +613,112 @@ qualité et l'homogénéité des métadonnées des sources externes, avant même
 
 ---
 
+# 7. Conduite du projet
+
+## Comment nous avons travaillé
+
+Le projet a avancé par questions successives, chacune tranchée par une mesure avant de passer à la
+suivante. Cette discipline a une conséquence pratique : à aucun moment nous n'avons construit une
+brique dont l'utilité n'était pas encore établie. La classification supervisée n'a été entreprise
+qu'une fois démontré, sans étiquettes, que l'information était présente dans les images ; la data
+augmentation n'a été mise en place qu'une fois le modèle de référence mesuré.
+
+Chaque étape a laissé une trace exécutable. Le dépôt s'organise en branches thématiques fusionnées
+après relecture, et l'intégration continue rejoue à chaque modification la vérification de style, les
+tests unitaires, puis la chaîne complète depuis un clone vierge. Ce dernier point n'est pas cosmétique :
+il a révélé un défaut qu'aucune exécution locale n'aurait montré, les tests n'étant pas collectés
+depuis un clone propre alors qu'ils passaient sur notre machine.
+
+## Les délais et où le temps est passé
+
+L'étude tient en une vingtaine de minutes de calcul sur un ordinateur portable, mais cette durée est
+très inégalement répartie. L'extraction des caractéristiques domine tout le reste : encoder les 1 050
+photographies avec VGG16 et en extraire 482 202 descripteurs SIFT représente à elle seule l'essentiel
+du temps machine. Les projections, les segmentations et l'entraînement des têtes de classification se
+comptent en secondes.
+
+Ce déséquilibre a orienté une décision d'architecture : toutes les caractéristiques extraites sont
+mises en cache sur disque. Une seconde exécution ne recalcule ni SIFT ni les réseaux, ce qui a rendu
+possible de reprendre plusieurs fois l'analyse sans repayer le coût d'extraction.
+
+Deux postes ont coûté plus que prévu. La cohabitation de TensorFlow et PyTorch dans un même processus
+a bloqué l'exécution sans lever d'erreur, ce qui est le pire mode de défaillance : le programme paraît
+travailler. Le diagnostic a demandé d'isoler le modèle dans un processus séparé pour constater qu'il
+se chargeait en deux secondes. Et la reprise du protocole d'évaluation, décrite plus bas, a imposé de
+recalculer l'ensemble de la partie supervisée.
+
+## Les coûts
+
+Le projet n'a engagé aucun coût d'infrastructure. Tout s'exécute sur un ordinateur portable, sans
+location de calcul graphique, et l'ensemble des modèles employés est librement disponible. Le poste
+le plus lourd est le téléchargement initial des poids pré-entraînés — environ trois gigaoctets —, payé
+une fois.
+
+Le coût réel de cette étude est donc en temps de travail, et sa structure mérite d'être notée : la
+part consacrée à écrire du code de modélisation est minoritaire. L'essentiel est allé à comprendre les
+données, à choisir les protocoles de mesure et à vérifier que les chiffres produits voulaient dire ce
+qu'on croyait.
+
+Sur une mise en production, la structure des coûts changerait de nature. L'inférence resterait modeste
+— quelques dizaines de millisecondes par article sur un processeur ordinaire — mais le traitement du
+catalogue existant, la construction d'un jeu d'étiquettes fiable et la maintenance de la chaîne
+deviendraient les postes dominants. Ce chiffrage dépasse le périmètre d'une étude de faisabilité et
+demanderait des données que nous n'avons pas : volume réel du catalogue, cadence de publication,
+coût horaire d'une révision manuelle.
+
+## Les livrables
+
+Trois livrables répondent aux trois demandes. L'étude de faisabilité produit huit projections, un
+tableau d'accords et les figures associées. La classification supervisée produit un modèle mesuré, sa
+matrice de confusion et la comparaison des stratégies d'augmentation. La collecte produit le fichier
+des dix produits aux cinq champs demandés.
+
+À cela s'ajoutent le présent rapport, six carnets exécutés qui portent le détail du raisonnement, et
+un dépôt public qui se rejoue en trois commandes.
+
+## Le contrôle de la performance, et deux erreurs corrigées
+
+Un rapport qui ne montrerait que ce qui a fonctionné ne rendrait pas compte du travail. Deux décisions
+ont été prises puis défaites, et les deux touchaient à la validité des mesures elles-mêmes.
+
+**La normalisation avant projection.** La première version standardisait chaque dimension avant de
+réduire. Sur des représentations creuses de cinq mille dimensions, ce traitement donne à un terme
+apparu trois fois dans tout le corpus le même poids qu'à un terme structurant : l'accord mesuré pour
+TF-IDF tombait à 0,001, au niveau du hasard. Le défaut a été repéré parce que ce chiffre était trop
+mauvais pour être vrai — un score anormalement bas est un signal aussi utile qu'un score anormalement
+bon.
+
+**Le protocole de sélection.** Plus grave, les stratégies d'augmentation ont d'abord été comparées
+directement sur le jeu de test, avant que la meilleure ne soit retenue. Aucune étiquette de test
+n'atteignait les poids du modèle, mais les décisions méthodologiques, elles, en dépendaient. Le jeu de
+validation existait et n'était pas utilisé. La correction a inversé la conclusion : la comparaison sur
+le test désignait l'absence d'augmentation, celle sur la validation désigne l'augmentation douce.
+C'est la meilleure justification qu'on puisse donner d'une règle de méthode — elle change la réponse.
+
+Ces deux corrections ont un point commun. Ni l'une ni l'autre n'a été signalée par un test qui échoue :
+le code fonctionnait, il mesurait simplement autre chose que ce que nous croyions mesurer. C'est la
+raison pour laquelle chaque chiffre du présent rapport est accompagné du protocole qui l'a produit,
+et pourquoi certains sont rapportés deux fois — l'accord avant et après réduction, la performance sur
+la validation puis sur le jeu réservé.
+
+## Ce que ce projet nous a appris
+
+Trois enseignements dépassent le cas particulier de cette marketplace.
+
+**Le choix de la représentation pèse plus que celui de l'algorithme.** Sur les mêmes photographies,
+deux méthodes d'extraction donnent 0,510 et 0,044. Aucun réglage de classifieur ne comble un tel
+écart.
+
+**Une méthode reconnue peut être inadaptée sans être mauvaise.** SIFT fait exactement ce pour quoi il
+a été conçu ; ce n'est simplement pas la question que nous posions. Savoir *pour quel usage* un outil
+a été construit importe davantage que sa réputation.
+
+**Le protocole de mesure fait partie du résultat.** Les deux erreurs corrigées ci-dessus ne portaient
+pas sur les modèles mais sur la façon de les évaluer, et l'une d'elles changeait la conclusion. Un
+score sans son protocole n'est pas une information.
+
+---
+
 # Annexes
 
 ## A. Rejouer l'étude
