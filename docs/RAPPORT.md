@@ -547,11 +547,11 @@ Trois enseignements, et ils sont nets.
 | 2,00 | 0,936 | 1,3 pt |
 | 4,00 | 0,918 | 2,0 pt |
 
-Le poids de 1,0 est à la fois **le meilleur en moyenne et le plus stable** — sa dispersion est six fois plus faible que celle du poids qui avait gagné le classement. Le classement désignait 0,25, la moyenne désigne 1,0, et le test confirme 1,0.
+Le poids de 1,0 est ici à la fois le meilleur en moyenne et le plus stable — sa dispersion est six fois plus faible que celle du poids qui avait gagné le classement. Le classement désignait 0,25, la moyenne désigne 1,0.
 
-Deux choses en sortent. D'abord, **le réglage implicite était le bon** : donner le même poids aux deux blocs, ce que faisait la normalisation sans qu'on l'ait décidé, est effectivement le bon choix. Ensuite, **laisser l'image dominer coûte cher** — à poids 4, on perd 2,9 points. Le texte reste le signal principal ; l'image est un complément, pas un remplaçant. C'est cohérent avec la §8.3, où l'image répare des catégories précises plutôt qu'elle n'améliore tout.
+Une conclusion tient sans réserve : **laisser l'image dominer coûte cher.** À poids 4, on perd 2,9 points. Le texte reste le signal principal et l'image un complément, ce qui rejoint la §8.3 où l'image répare des catégories précises plutôt qu'elle n'améliore tout.
 
-Il fallait tester pour le savoir. Un réglage qu'on n'a pas choisi n'est pas un réglage qu'on a validé.
+Le départage entre 0,25, 0,5 et 1,0 est en revanche à prendre avec prudence, et la §9.5 montre pourquoi : la validation croisée place le maximum ailleurs. Il fallait tester pour le savoir — un réglage qu'on n'a pas choisi n'est pas un réglage qu'on a validé — mais tester n'a pas suffi à trancher.
 
 ## 9.5 La correction : sélectionner par validation croisée
 
@@ -605,6 +605,26 @@ Une précaution de lecture s'impose ici, et elle a une conséquence pratique. Le
 Le classement est parfaitement ordonné, et il tient en une phrase : **les bigrammes d'abord, puis autant de vocabulaire que possible.** Les cinq premières lignes sont toutes des bigrammes, les trois dernières des unigrammes, sans un seul croisement. L'écart total est de 1,8 point — moins spectaculaire que les 7,7 points de la validation simple, parce que la moyenne sur cinq blocs a effacé le bruit qui les gonflait.
 
 Du côté de la tête, où le plan reste équilibré, les moyennes marginales confirment ce qu'on avait vu : **0,42 point d'écart** entre les trois formes de réseau testées, **0,19 point** entre les trois valeurs de régularisation. Sur des écarts-types de 1,4 point, ces différences n'existent pas.
+
+### Le poids de l'image : deux méthodes, deux réponses, et ce qu'il faut en retenir
+
+Le même traitement appliqué à la fusion donne un résultat plus embarrassant, et il vaut d'être rapporté tel quel.
+
+| Poids du bloc image | F1 moyenne (validation croisée) |
+|---|---|
+| 0,50 | 0,936 |
+| 0,25 | 0,932 |
+| 1,00 | 0,928 |
+| 2,00 | 0,919 |
+| 4,00 | 0,916 |
+
+La validation simple plaçait 1,0 en tête ; la validation croisée place 0,5. Les deux méthodes se contredisent — sur 0,8 point d'écart, pour un écart-type de 1,6 point. **Elles ne se contredisent donc pas vraiment : elles disent toutes les deux que ces trois valeurs sont équivalentes.** Sur 45 configurations, 18 sont à moins d'un écart-type du sommet.
+
+Ce sur quoi elles s'accordent, en revanche, est net et monotone : au-delà d'un poids de 1, la performance chute sans ambiguïté. Laisser l'image peser plus lourd que le texte dégrade le modèle. C'est la seule conclusion que ces mesures autorisent, et elle suffit.
+
+Reste le test, qui apporte un argument que la F1 macro ne montrait pas. La configuration retenue par validation croisée — poids 0,5 — obtient **0,975 sur le test, exactement comme le poids de 1,0** retenu au §8.2. Mais sa catégorie la plus faible tombe à **0,913, contre 0,955**. À performance moyenne identique, elle abandonne quatre points sur le rayon le moins bien servi.
+
+C'est précisément ce que la §8.1 annonçait en choisissant de suivre la classe la plus faible plutôt que la moyenne seule. Le poids de 1,0 est conservé — non parce qu'il gagne en moyenne, mais parce qu'il ne sacrifie personne.
 
 ## 9.6 Ce que l'exercice apprend
 

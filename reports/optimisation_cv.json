@@ -1,0 +1,58 @@
+{
+  "methode": "cv",
+  "test": [
+    {
+      "Modèle": "Texte optimisé",
+      "F1 macro": 0.9366,
+      "Accuracy": 0.9367,
+      "F1 classe min": 0.8444,
+      "Seuil 0,90": "oui"
+    },
+    {
+      "Modèle": "Fusion optimisée",
+      "F1 macro": 0.9746,
+      "Accuracy": 0.9747,
+      "F1 classe min": 0.913,
+      "Seuil 0,90": "oui"
+    }
+  ],
+  "seuils": {
+    "Fusion optimisée": [
+      {
+        "Seuil": 0.5,
+        "Couverture": 0.9873,
+        "Articles retenus": 156,
+        "Erreurs": 3,
+        "Taux d'erreur": 0.0192
+      },
+      {
+        "Seuil": 0.6,
+        "Couverture": 0.981,
+        "Articles retenus": 155,
+        "Erreurs": 2,
+        "Taux d'erreur": 0.0129
+      },
+      {
+        "Seuil": 0.7,
+        "Couverture": 0.962,
+        "Articles retenus": 152,
+        "Erreurs": 1,
+        "Taux d'erreur": 0.0066
+      },
+      {
+        "Seuil": 0.8,
+        "Couverture": 0.9241,
+        "Articles retenus": 146,
+        "Erreurs": 1,
+        "Taux d'erreur": 0.0068
+      },
+      {
+        "Seuil": 0.9,
+        "Couverture": 0.8481,
+        "Articles retenus": 134,
+        "Erreurs": 1,
+        "Taux d'erreur": 0.0075
+      }
+    ]
+  }
+}
