@@ -563,17 +563,62 @@ Une précaution s'impose dans cette découpe : **le vectoriseur est réajusté �
 
 Le jeu de test, lui, reste fermé jusqu'au bout.
 
-<!-- OPTIM_CV -->
+### Ce que la validation croisée montre d'abord : presque rien ne départage
+
+72 configurations distinctes ont été évaluées cinq fois chacune. Deux nombres résument le résultat, et c'est leur rapport qui compte :
+
+| | |
+|---|---|
+| Meilleure configuration | **0,945 ± 0,014** |
+| Étendue de tout le classement | 3,5 points |
+
+L'écart-type d'une configuration entre ses cinq blocs est de 1,4 point. L'étendue de tout le classement, du premier au dernier, est de 3,5 points — soit deux écarts-types et demi. Conséquence directe : **35 des 72 configurations sont à moins d'un écart-type du sommet, et 69 à moins de deux.**
+
+La quasi-totalité de la grille est indiscernable. Ce n'est pas un échec de l'exploration, c'est sa réponse : à ce volume de données, ces réglages ne font pas de différence mesurable.
+
+C'est précisément l'information que la validation simple était incapable de fournir. Elle produisait un classement d'apparence nette, sans aucun moyen de savoir que ses écarts n'existaient pas.
+
+### Et la configuration qu'elle retient est celle du départ
+
+| | Représentation | Tête |
+|---|---|---|
+| Configuration initiale, choisie a priori | 5 000 termes, bigrammes, seuil 2 | (128, 64), α = 10⁻⁴ |
+| Retenue par validation croisée | 5 000 termes, bigrammes, seuil 2 | (128, 64), α = 10⁻⁴ |
+
+Elles sont identiques. Le meilleur résultat de l'exploration reproduit les réglages qui avaient été posés au jugé.
+
+Sur le test, cette configuration donne 0,937, contre 0,943 mesuré au §8.2. Les hyperparamètres étant les mêmes, l'écart ne vient pas d'eux : il vient de ce que le modèle final est ici réentraîné sur les 892 articles ayant servi à la sélection plutôt que sur les 735 de l'entraînement seul, ce qui reconstruit aussi le vocabulaire. **Six dixièmes de point sur 158 articles, c'est un article.** Il n'y a rien à en conclure, et c'est exactement ce que la §9.3 aurait dû nous empêcher de faire dire aux chiffres.
+
+### Ce qui ressort quand même : la représentation, et elle seule
+
+Une précaution de lecture s'impose ici, et elle a une conséquence pratique. Les moyennes marginales ne sont valables que sur un plan équilibré. Après déduplication de la grille, elles ne le sont plus pour la représentation : « vocabulaire illimité » ne survit que là où il change quelque chose — c'est-à-dire uniquement sur les configurations à bigrammes — si bien que sa moyenne est contaminée par l'effet des bigrammes. On compare donc les huit représentations directement, chacune portant le même nombre de configurations de tête.
+
+| Représentation | Vocabulaire | F1 moyenne |
+|---|---|---|
+| **Bigrammes**, seuil d'entrée 1 | 22 626 | **0,937** |
+| Bigrammes, seuil 1 | 10 000 | 0,935 |
+| Bigrammes, seuil 1 | 5 000 | 0,933 |
+| Bigrammes, seuil 2 | 5 000 – 5 412 | 0,929 |
+| Unigrammes, seuil 1 | 5 000 – 5 275 | 0,925 |
+| Unigrammes, seuil 2 | 2 129 | 0,920 |
+
+Le classement est parfaitement ordonné, et il tient en une phrase : **les bigrammes d'abord, puis autant de vocabulaire que possible.** Les cinq premières lignes sont toutes des bigrammes, les trois dernières des unigrammes, sans un seul croisement. L'écart total est de 1,8 point — moins spectaculaire que les 7,7 points de la validation simple, parce que la moyenne sur cinq blocs a effacé le bruit qui les gonflait.
+
+Du côté de la tête, où le plan reste équilibré, les moyennes marginales confirment ce qu'on avait vu : **0,42 point d'écart** entre les trois formes de réseau testées, **0,19 point** entre les trois valeurs de régularisation. Sur des écarts-types de 1,4 point, ces différences n'existent pas.
 
 ## 9.6 Ce que l'exercice apprend
 
-**L'optimisation n'a rien amélioré, et c'est un résultat à part entière.** Les réglages choisis a priori étaient déjà les bons. Un rapport qui n'aurait montré que le tableau final aurait pu laisser croire à un travail de réglage fructueux ; ce qui s'est passé est plus utile à savoir.
+**L'optimisation n'a rien amélioré, et c'est un résultat à part entière.** La validation croisée a retenu, à l'identique, les réglages posés au jugé avant toute mesure. Un rapport qui n'aurait montré qu'un tableau final aurait pu laisser croire à un travail de réglage fructueux ; savoir que la grille explorée ne contenait rien de mieux vaut mieux qu'un gain inventé.
 
-**On lit une exploration par ses moyennes, jamais par sa première ligne.** La première ligne d'un classement est la configuration qui a eu le plus de chance sur le jeu de sélection. C'est structurel : le maximum d'un échantillon bruité est biaisé vers le haut. La moyenne par valeur ne l'est pas.
+Ce n'est pas non plus du temps perdu. On sait maintenant **où il est inutile de chercher**, ce qui est précisément ce qu'on demande à une exploration lorsqu'elle ne trouve rien.
 
-**La représentation décide, le classifieur suit.** L'écart total imputable aux réglages de la tête est de 0,5 point ; celui imputable à la représentation, de 7,7. C'est un piège classique, et il est confortable : régler un réseau est ce qu'on sait faire, tandis que choisir une représentation demande de comprendre les données. Le temps était mieux investi du second côté.
+**On lit une exploration par ses moyennes, jamais par sa première ligne.** La première ligne d'un classement est la configuration qui a eu le plus de chance sur le jeu de sélection — c'est structurel, le maximum d'un échantillon bruité est biaisé vers le haut. Les deux passages le montrent : la validation simple désignait un gagnant qui perdait sur le test, et la validation croisée place 35 configurations sur 72 à moins d'un écart-type du sommet.
 
-**Un jeu de validation de 157 articles ne permet pas de sélectionner.** C'est la limite qu'il faut retenir pour la suite : sur un volume plus important, la sélection redeviendra fiable, et il sera alors utile de recommencer cette exploration.
+**La représentation décide, le classifieur suit.** L'écart imputable aux réglages de la tête est de 0,42 point ; celui imputable au choix de la représentation, de 1,8 point — quatre fois plus, et la validation simple donnait la même direction plus fort encore. Le piège est confortable : régler un réseau est ce qu'on sait faire, tandis que choisir une représentation demande de comprendre les données. Le temps était mieux investi du second côté, et le §8.3 le confirme à plus grande échelle — c'est là que se jouent les vrais écarts.
+
+**Deux régularisations, une seule agit.** L'arrêt anticipé rend le paramètre `alpha` sans effet mesurable. Un réglage qu'on croit tenir peut être neutralisé par un autre qu'on n'a pas remarqué ; on ne s'en aperçoit qu'en le faisant varier.
+
+**Un jeu de 157 articles ne permet pas de sélectionner.** C'est la limite à retenir pour la suite. Sur un volume plus important, la sélection redeviendra discriminante, et cette exploration vaudra la peine d'être reprise — cette fois avec un espoir raisonnable d'y trouver quelque chose.
 
 ---
 
@@ -803,7 +848,13 @@ Versions épinglées, graine fixe, découpe définie dans un module unique. L'in
 | `reports/fig4_donnees.png` | Équilibre des classes, distribution des longueurs |
 | `reports/benchmark.csv` | Le tableau de résultats complet |
 | `reports/f1_par_classe.json` | Performance détaillée par catégorie |
-| `reports/optimisation_*.csv` | Toutes les combinaisons d'hyperparamètres et leur score de validation |
+| `reports/optimisation_texte_cv.csv` | Les 72 combinaisons explorées, moyenne et écart-type sur cinq blocs |
+| `reports/optimisation_fusion_cv.csv` | Idem pour le poids du bloc image |
+| `reports/representations_cv.csv` | Les huit représentations comparées à plan équilibré |
+| `reports/effets_marginaux_*_cv.csv` | Moyenne par valeur d'hyperparamètre — à ne lire que sur les axes de la tête |
+| `reports/optimisation_cv.json` | Le score de test de la configuration retenue, ouvert une seule fois |
+
+Le suffixe `_cv` désigne la sélection par validation croisée. Les mêmes fichiers en `_holdout` sont produits par `make optimize HOLDOUT=1` et documentent la méthode naïve critiquée en §9.3.
 
 ## D. Note sur les métriques
 
