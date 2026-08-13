@@ -1,0 +1,5 @@
+Stratégie,Images d'entraînement,F1 macro (validation),Exactitude (validation)
+Augmentation douce ×4,3675,0.8277,0.828
+Augmentation forte ×4,3675,0.8265,0.828
+Sans augmentation,735,0.8216,0.8217
+Augmentation forte ×8,6615,0.8149,0.8153

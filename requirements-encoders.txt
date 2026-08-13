@@ -1,8 +1,22 @@
-# Encodeurs pré-entraînés — texte (BERT, ModernBERT) et image (DINOv2).
-# Environ 1,4 Go de poids au premier lancement. Volontairement séparé du socle :
-# l'intégration continue n'en a pas besoin, et l'installation coûterait plusieurs
-# minutes par exécution.
+# Encodeurs pré-entraînés et extraction de caractéristiques.
+#
+# Texte : BERT et ModernBERT via transformers, Word2Vec via gensim, et
+# Universal Sentence Encoder via TensorFlow Hub. USE est le seul usage de
+# TensorFlow du projet ; il cohabite sans conflit avec PyTorch, et c'est bien
+# le modèle de référence que la mission nomme, pas une variante approchante.
+#
+# Image : VGG16 via torchvision, SIFT via OpenCV.
+#
+# Environ 3 Go de poids au premier lancement. Volontairement séparé du socle :
+# l'intégration continue n'en a pas besoin.
 -r requirements.txt
 torch==2.13.0
 torchvision==0.28.0
 transformers==5.15.0
+gensim==4.4.0
+opencv-python-headless==5.0.0.90
+tensorflow==2.21.0
+tensorflow-hub==0.16.1
+# tensorflow_hub importe `pkg_resources`, retiré de setuptools à partir de la
+# version 81. La borne haute est là pour ça, pas par prudence générale.
+setuptools<81
