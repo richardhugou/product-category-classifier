@@ -59,10 +59,11 @@ def features(uniq_ids, device: str | None = None) -> tuple[np.ndarray, float]:
     """Caractéristiques visuelles, depuis le cache si possible.
 
     Renvoie (matrice, secondes d'encodage). Le temps vaut 0 si le cache a servi.
-    """
-    import torch
 
-    device = device or ("mps" if torch.backends.mps.is_available() else "cpu")
+    Le cache est lu avant tout import de `torch` : relire des caractéristiques
+    déjà calculées ne doit pas exiger un cadriciel d'apprentissage profond.
+    C'est ce qui permet à `optimize.py` de tourner sur le socle seul.
+    """
     CACHE.mkdir(parents=True, exist_ok=True)
     cache_x = CACHE / "dinov2_base.npy"
     cache_ids = CACHE / "dinov2_base_ids.npy"
@@ -73,6 +74,9 @@ def features(uniq_ids, device: str | None = None) -> tuple[np.ndarray, float]:
         if len(connus) == len(ids) and (connus == ids).all():
             return np.load(cache_x), 0.0
 
+    import torch
+
+    device = device or ("mps" if torch.backends.mps.is_available() else "cpu")
     proc, model = _load_encoder(device)
     t0 = time.perf_counter()
     X = encode(list(ids), proc, model, device)

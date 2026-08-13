@@ -1,4 +1,4 @@
-.PHONY: help all benchmark figures demo test lint notebooks clean
+.PHONY: help all benchmark optimize figures demo test lint notebooks clean
 
 help:                        ## affiche cette aide
 	@grep -E '^[a-z-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n",$$1,$$2}'
@@ -7,6 +7,9 @@ all: benchmark figures       ## reproduit tous les artefacts de reports/
 
 benchmark:                   ## entraîne et évalue (ENCODERS=1 IMAGES=1 pour tout)
 	python benchmark.py $(if $(ENCODERS),--encoders,) $(if $(IMAGES),--images,)
+
+optimize:                    ## explore les hyperparamètres (HOLDOUT=1 pour la méthode naïve)
+	python optimize.py --images $(if $(HOLDOUT),--holdout,)
 
 figures:                     ## regénère les quatre figures
 	python -m src.figures
