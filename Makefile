@@ -23,8 +23,8 @@ test:                        ## tests unitaires
 lint:                        ## lint et format
 	ruff check . && ruff format --check .
 
-notebooks:                   ## rejoue les six carnets en place
-	python scripts/run_notebooks.py
+notebooks:                   ## rejoue les carnets en place (NB=04 pour n'en cibler qu'un)
+	python scripts/run_notebooks.py $(NB)
 
 clean:
 	rm -rf models reports/*.png reports/*.csv reports/*.json .pytest_cache

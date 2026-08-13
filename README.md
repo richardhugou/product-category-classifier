@@ -97,7 +97,10 @@ Autres cibles : `make test`, `make lint`, `make notebooks`, `make help`.
 ├── faisabilite.py           étude de faisabilité — première demande
 ├── supervise_image.py       classification supervisée — deuxième demande
 ├── collecte_api.py          collecte via API — troisième demande
-├── notebooks/               les carnets, exécutés
+├── notebooks/               les carnets, exécutés, dans l'ordre de la mission
+│   ├── 01_eda_etl · 02_visualisation · 03_representations
+│   ├── 04_faisabilite · 05_supervise_image · 06_collecte_api
+│   └── complementaires/     les travaux hors périmètre de la mission
 ├── tests/                   23 tests, dont le test anti-fuite
 └── docs/RAPPORT.md          le rapport
 ```

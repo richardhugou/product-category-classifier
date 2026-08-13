@@ -391,8 +391,8 @@ sur 735 images conduirait à ce qu'il apprenne ces images plutôt que la tâche.
 Le fonctionnement se résume simplement. La photographie entre dans le réseau figé, qui en produit 512
 nombres ; la tête reçoit ces 512 nombres et rend 7 probabilités, une par catégorie. Sur la photographie
 de notre montre — qui appartient au jeu réservé et n'a donc jamais servi à l'apprentissage — la réponse
-est *Watches* avec une probabilité de 0,999. Les six autres catégories se partagent le millième restant.
-C'est un cas facile : une montre sur fond blanc ne ressemble à rien d'autre dans le catalogue.
+est *Watches* avec une probabilité de 0,977, la deuxième catégorie la plus probable ne recueillant que
+0,011. C'est un cas facile : une montre sur fond blanc ne ressemble à rien d'autre dans le catalogue.
 
 ## Chercher à faire mieux : la data augmentation
 
