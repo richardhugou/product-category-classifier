@@ -14,8 +14,14 @@ optimize:                    ## explore les hyperparamètres (HOLDOUT=1 pour la 
 figures:                     ## regénère les quatre figures
 	python -m src.figures
 
-demo:                        ## lance la démonstration
+demo:                        ## comparaison texte / image / fusion (travail complémentaire)
 	streamlit run app.py
+
+demo-mission:                ## le modèle de la partie 4, seul — celui de la soutenance
+	streamlit run demo.py
+
+modele:                      ## sérialise le modèle de la partie 4 et vérifie qu'il reproduit 0,867
+	python scripts/exporter_modele.py
 
 test:                        ## tests unitaires
 	pytest

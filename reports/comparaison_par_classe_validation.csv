@@ -1,0 +1,8 @@
+,TF-IDF,BERT figé (2018),ModernBERT figé (2024),VGG16 figé (CNN),DINOv2 figé (ViT),Fusion TF-IDF + DINOv2
+Baby Care,0.864,0.81,0.78,0.75,0.844,0.844
+Beauty and Personal Care,0.933,0.905,0.8,0.81,0.93,0.955
+Computers,0.952,0.978,0.977,0.81,0.93,0.93
+Home Decor & Festive Needs,0.955,0.816,0.933,0.739,0.809,0.894
+Home Furnishing,0.913,0.894,0.898,0.905,0.933,0.933
+Kitchen & Dining,0.939,0.933,0.936,0.92,0.936,1.0
+Watches,1.0,1.0,1.0,0.818,1.0,1.0

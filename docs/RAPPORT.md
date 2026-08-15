@@ -32,7 +32,7 @@ automatiquement sa catégorie ?
 Sa demande précise la démarche attendue, et celle-ci donne son plan au présent rapport. Il faut d'abord
 prétraiter les données textuelles et visuelles, puis en extraire des caractéristiques numériques selon
 plusieurs méthodes nommément désignées : pour le texte, un comptage simple de mots, une pondération
-TF-IDF, un plongement de mots de type Word2Vec, puis deux approches de représentation de phrase, BERT
+TF-IDF, un embedding de mots de type Word2Vec, puis deux approches de représentation de phrase, BERT
 et USE ; pour l'image, une méthode à points d'intérêt de type SIFT et un réseau convolutif utilisé en
 transfert. Il faut ensuite projeter les produits en deux dimensions pour les observer, analyser
 graphiquement si les catégories se dessinent, et confirmer cette analyse visuelle par une mesure
@@ -125,7 +125,7 @@ mettrait à renseigner sa marque. Nous écartons donc ce champ, indicateur d'abs
 Le prétraitement du texte suit ensuite une chaîne classique : passage en minuscules, suppression de la
 ponctuation et des chiffres isolés, découpage en mots, puis retrait des mots-outils anglais — *of*,
 *for*, *the* — qui apparaissent partout et ne distinguent rien. Appliquée à notre montre, cette chaîne
-ramène 34 mots bruts à 29 jetons retenus :
+ramène 34 mots bruts à 29 tokens retenus :
 
 ```
 specifications · metal · strap · analog · watch · men · general · type · analog · style · code ·
@@ -391,8 +391,9 @@ sur 735 images conduirait à ce qu'il apprenne ces images plutôt que la tâche.
 Le fonctionnement se résume simplement. La photographie entre dans le réseau figé, qui en produit 512
 nombres ; la tête reçoit ces 512 nombres et rend 7 probabilités, une par catégorie. Sur la photographie
 de notre montre — qui appartient au jeu réservé et n'a donc jamais servi à l'apprentissage — la réponse
-est *Watches* avec une probabilité de 0,977, la deuxième catégorie la plus probable ne recueillant que
-0,011. C'est un cas facile : une montre sur fond blanc ne ressemble à rien d'autre dans le catalogue.
+est *Watches* — à ce stade, c'est-à-dire avant toute augmentation — avec une probabilité de 0,977, la
+deuxième catégorie la plus probable ne recueillant que 0,011. C'est un cas facile : une montre sur
+fond blanc ne ressemble à rien d'autre dans le catalogue.
 
 ## Chercher à faire mieux : la data augmentation
 
@@ -571,7 +572,7 @@ une référence imparfaite, sans moyen de savoir, lorsque le modèle contredit u
 deux a raison. Toute performance rapportée ici est donc mesurée contre un étalon bruité.
 
 Le volume constitue la deuxième limite. Mille cinquante produits, dont 735 pour l'entraînement, c'est
-peu. Cela nous a interdit le réajustement fin des réseaux pré-entraînés, qui sont donc employés figés :
+peu. Cela nous a interdit le fine-tuning des réseaux pré-entraînés, qui sont donc employés figés :
 nous comparons des représentations, pas les capacités maximales de ces modèles. Cela explique aussi la
 contre-performance de Word2Vec, entraîné sur ce seul corpus.
 
@@ -596,7 +597,7 @@ et faire ré-étiqueter un échantillon des produits sur lesquels le modèle est
 contredisant le vendeur, permettrait de savoir si les erreurs restantes sont celles du modèle ou celles
 du catalogue. Sans cette clarification, on optimiserait contre une cible bruitée.
 
-Vient ensuite le volume. Un corpus plus important rendrait accessible le réajustement fin des réseaux
+Vient ensuite le volume. Un corpus plus important rendrait accessible le fine-tuning des réseaux
 pré-entraînés, qui est la piste la plus prometteuse pour dépasser le niveau atteint ici, et permettrait
 d'envisager une classification hiérarchique descendant dans l'arborescence.
 
@@ -673,7 +674,7 @@ tableau d'accords et les figures associées. La classification supervisée produ
 matrice de confusion et la comparaison des stratégies d'augmentation. La collecte produit le fichier
 des dix produits aux cinq champs demandés.
 
-À cela s'ajoutent le présent rapport, six carnets exécutés qui portent le détail du raisonnement, et
+À cela s'ajoutent le présent rapport, six notebooks exécutés qui portent le détail du raisonnement, et
 un dépôt public qui se rejoue en trois commandes.
 
 ## Le contrôle de la performance, et deux erreurs corrigées

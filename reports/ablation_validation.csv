@@ -1,0 +1,7 @@
+Bras,F1 macro (val),"F1 macro (val, L2)"
+BERT figé (2018) · moyenne · 256,0.905,0.8898
+BERT figé (2018) · cls · 256,0.9041,0.8913
+ModernBERT figé (2024) · moyenne · 256,0.9035,0.8427
+ModernBERT figé (2024) · cls · 256,0.8394,0.7896
+ModernBERT figé (2024) · moyenne · 1024,0.8974,0.8489
+ViT-B/16 supervisé ImageNet,0.8864,0.8864

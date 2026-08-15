@@ -1,0 +1,7 @@
+Représentation,Famille,Statut,Dimensions,F1 macro (validation),Exactitude (validation),F1 classe la plus faible,Classe la plus faible
+Fusion TF-IDF + DINOv2,mixte,mixte,6068,0.9366,0.9363,0.844,Baby Care
+TF-IDF,texte,référence,4532,0.9365,0.9363,0.864,Baby Care
+DINOv2 figé (ViT),image,moderne,1536,0.9118,0.9108,0.809,Home Decor & Festive Needs
+BERT figé (2018),texte,référence,768,0.905,0.9045,0.81,Baby Care
+ModernBERT figé (2024),texte,moderne,768,0.9035,0.9045,0.78,Baby Care
+VGG16 figé (CNN),image,référence,512,0.8216,0.8217,0.739,Home Decor & Festive Needs
