@@ -36,7 +36,7 @@ URL = "https://world.openfoodfacts.org/api/v2/search"
 TENTATIVES = 3
 
 # Open Food Facts demande une identification explicite des clients.
-AGENT = "product-category-classifier/1.0 (etude OpenClassrooms)"
+AGENT = "product-category-classifier/1.0 (contact: richard.hugou@gmail.com)"
 
 # Champ demandé  ->  champ Open Food Facts qui lui correspond.
 #
