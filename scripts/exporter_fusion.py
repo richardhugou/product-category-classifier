@@ -42,8 +42,7 @@ def main() -> int:
         print(f"Bras retenu inattendu : {retenue} — ce script ne sait sérialiser que la fusion.")
         return 1
     print(f"Bras retenu sur validation : {retenue}")
-    print(f"À reproduire : F1 macro {attendu['F1 macro (test)']:.4f}"
-          f" · {attendu['Bien classés']}\n")
+    print(f"À reproduire : F1 macro {attendu['F1 macro (test)']:.4f} · {attendu['Bien classés']}\n")
 
     df = load()
     train, _, test = split(df)
@@ -53,8 +52,9 @@ def main() -> int:
     vec = vectoriseur().fit(train[TEXT_COL])
     X_img, _ = features(df["uniq_id"])
     par_id = dict(zip(df["uniq_id"], X_img, strict=True))
-    dino = {n: np.vstack([par_id[u] for u in d["uniq_id"]])
-            for n, d in (("tr", train), ("te", test))}
+    dino = {
+        n: np.vstack([par_id[u] for u in d["uniq_id"]]) for n, d in (("tr", train), ("te", test))
+    }
     X_tr = concatener(vec.transform(train[TEXT_COL]), normaliser(dino["tr"]))
     clf = tete().fit(X_tr, y_tr)
 

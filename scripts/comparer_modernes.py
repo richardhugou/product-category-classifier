@@ -63,8 +63,10 @@ def main() -> None:
     print("TF-IDF (référence texte)")
     vec = vectoriseur()
     bras["TF-IDF"] = {
-        "famille": "texte", "statut": "référence",
-        "tr": vec.fit_transform(txt["tr"]), "va": vec.transform(txt["va"]),
+        "famille": "texte",
+        "statut": "référence",
+        "tr": vec.fit_transform(txt["tr"]),
+        "va": vec.transform(txt["va"]),
         "te": vec.transform(txt["te"]),
     }
 
@@ -93,7 +95,8 @@ def main() -> None:
 
     # ------------------------------------------------------------- mixte
     bras["Fusion TF-IDF + DINOv2"] = {
-        "famille": "mixte", "statut": "mixte",
+        "famille": "mixte",
+        "statut": "mixte",
         "tr": concatener(bras["TF-IDF"]["tr"], dino["tr"]),
         "va": concatener(bras["TF-IDF"]["va"], dino["va"]),
         "te": concatener(bras["TF-IDF"]["te"], dino["te"]),
@@ -108,16 +111,22 @@ def main() -> None:
         scores = f1_score(y_va, pred, average=None, labels=range(len(etiquettes)))
         par_classe[nom] = dict(zip(etiquettes, [round(float(v), 3) for v in scores], strict=True))
         modeles[nom] = clf
-        lignes.append({
-            "Représentation": nom, "Famille": b["famille"], "Statut": b["statut"],
-            "Dimensions": int(b["tr"].shape[1]),
-            "F1 macro (validation)": round(float(f1_score(y_va, pred, average="macro")), 4),
-            "Exactitude (validation)": round(float(accuracy_score(y_va, pred)), 4),
-            "F1 classe la plus faible": round(float(scores.min()), 3),
-            "Classe la plus faible": etiquettes[int(scores.argmin())],
-        })
-        print(f"  {nom:26s} F1 macro {lignes[-1]['F1 macro (validation)']:.4f}"
-              f" · min {lignes[-1]['F1 classe la plus faible']:.3f}")
+        lignes.append(
+            {
+                "Représentation": nom,
+                "Famille": b["famille"],
+                "Statut": b["statut"],
+                "Dimensions": int(b["tr"].shape[1]),
+                "F1 macro (validation)": round(float(f1_score(y_va, pred, average="macro")), 4),
+                "Exactitude (validation)": round(float(accuracy_score(y_va, pred)), 4),
+                "F1 classe la plus faible": round(float(scores.min()), 3),
+                "Classe la plus faible": etiquettes[int(scores.argmin())],
+            }
+        )
+        print(
+            f"  {nom:26s} F1 macro {lignes[-1]['F1 macro (validation)']:.4f}"
+            f" · min {lignes[-1]['F1 classe la plus faible']:.3f}"
+        )
 
     table = pd.DataFrame(lignes).sort_values("F1 macro (validation)", ascending=False)
     table.to_csv(REPORTS / "comparaison_validation.csv", index=False)
@@ -138,9 +147,12 @@ def main() -> None:
     }
     pd.DataFrame([resultat]).to_csv(REPORTS / "comparaison_test.csv", index=False)
     pd.Series(dict(zip(etiquettes, [round(float(v), 3) for v in scores_te], strict=True))).to_csv(
-        REPORTS / "comparaison_par_classe_test.csv")
-    print(f"  F1 macro test {resultat['F1 macro (test)']:.4f}"
-          f" · {resultat['Bien classés']} bien classés")
+        REPORTS / "comparaison_par_classe_test.csv"
+    )
+    print(
+        f"  F1 macro test {resultat['F1 macro (test)']:.4f}"
+        f" · {resultat['Bien classés']} bien classés"
+    )
 
     # ------------------------------------------------------------- figure
     ordre = list(table["Représentation"])
@@ -150,17 +162,22 @@ def main() -> None:
     x = np.arange(len(etiquettes))
     for i, nom in enumerate(ordre):
         statut = str(table.set_index("Représentation").loc[nom, "Statut"])
-        axe.bar(x + i * largeur - 0.4 + largeur / 2,
-                [par_classe[nom][e] for e in etiquettes],
-                width=largeur, label=nom, color=TEINTES[statut],
-                alpha=1.0 if statut != "référence" else 0.85)
+        axe.bar(
+            x + i * largeur - 0.4 + largeur / 2,
+            [par_classe[nom][e] for e in etiquettes],
+            width=largeur,
+            label=nom,
+            color=TEINTES[statut],
+            alpha=1.0 if statut != "référence" else 0.85,
+        )
     axe.set_xticks(x)
     axe.set_xticklabels(courts, fontsize=8)
     axe.set_ylabel("F1 sur la validation")
     axe.set_ylim(0, 1.05)
     axe.legend(fontsize=8, frameon=False, ncol=2)
-    axe.set_title("Références et modernes, catégorie par catégorie — jeu de validation",
-                  fontsize=12)
+    axe.set_title(
+        "Références et modernes, catégorie par catégorie — jeu de validation", fontsize=12
+    )
     for bord in ("top", "right"):
         axe.spines[bord].set_visible(False)
     fig.tight_layout()

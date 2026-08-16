@@ -52,8 +52,13 @@ def encoder_variante(textes, tok, mdl, device, regroupement="moyenne", max_len=2
     sorties = []
     with torch.no_grad():
         for i in range(0, len(textes), 32):
-            lot = tok(textes[i : i + 32], padding=True, truncation=True,
-                      max_length=max_len, return_tensors="pt").to(device)
+            lot = tok(
+                textes[i : i + 32],
+                padding=True,
+                truncation=True,
+                max_length=max_len,
+                return_tensors="pt",
+            ).to(device)
             h = mdl(**lot).last_hidden_state
             if regroupement == "cls":
                 sorties.append(h[:, 0].cpu().numpy())
@@ -111,10 +116,13 @@ def main() -> None:
             E_va = encoder_variante(txt_va, tok, mdl, device, regroupement, max_len)
             f1_brut = mesurer(E_tr, E_va)
             f1_l2 = mesurer(normalize(E_tr), normalize(E_va))
-            lignes.append({"Bras": f"{nom} · {lib}", "F1 macro (val)": f1_brut,
-                           "F1 macro (val, L2)": f1_l2})
-            print(f"  {nom} · {lib:14s} brut {f1_brut:.4f} · L2 {f1_l2:.4f}"
-                  f" · {time.perf_counter() - t0:.0f} s")
+            lignes.append(
+                {"Bras": f"{nom} · {lib}", "F1 macro (val)": f1_brut, "F1 macro (val, L2)": f1_l2}
+            )
+            print(
+                f"  {nom} · {lib:14s} brut {f1_brut:.4f} · L2 {f1_l2:.4f}"
+                f" · {time.perf_counter() - t0:.0f} s"
+            )
         del tok, mdl
 
     # ------------------------------------------------- image : H4
@@ -124,8 +132,13 @@ def main() -> None:
     V_tr = normaliser(encoder_image(ids_tr, VIT_SUPERVISE, device))
     V_va = normaliser(encoder_image(ids_va, VIT_SUPERVISE, device))
     f1_vit = mesurer(V_tr, V_va)
-    lignes.append({"Bras": "ViT-B/16 supervisé ImageNet", "F1 macro (val)": f1_vit,
-                   "F1 macro (val, L2)": f1_vit})
+    lignes.append(
+        {
+            "Bras": "ViT-B/16 supervisé ImageNet",
+            "F1 macro (val)": f1_vit,
+            "F1 macro (val, L2)": f1_vit,
+        }
+    )
     print(f"  F1 macro {f1_vit:.4f} · {time.perf_counter() - t0:.0f} s")
 
     table = pd.DataFrame(lignes)
@@ -136,29 +149,37 @@ def main() -> None:
     tok, _, _ = charger_encodeur(ENCODEURS["BERT figé (2018)"], "cpu")
     longueurs = [len(tok(t, truncation=False)["input_ids"]) for t in txt_tr + txt_va]
     tronquees = sum(1 for n in longueurs if n > 256)
-    print(f"  fiches au-delà de 256 jetons : {tronquees}/{len(longueurs)}"
-          f" ({100 * tronquees / len(longueurs):.1f} %) · max {max(longueurs)}")
+    print(
+        f"  fiches au-delà de 256 jetons : {tronquees}/{len(longueurs)}"
+        f" ({100 * tronquees / len(longueurs):.1f} %) · max {max(longueurs)}"
+    )
 
     tok, mdl, _ = charger_encodeur(ENCODEURS["BERT figé (2018)"], device)
     E_va = normalize(encoder_variante(txt_va, tok, mdl, device))
     sim_bert = (E_va @ E_va.T)[np.triu_indices(len(E_va), k=1)].mean()
     vec = vectoriseur().fit(txt_tr)
     T_va = vec.transform(txt_va)
-    sim_tfidf = np.asarray((T_va @ T_va.T).todense())[
-        np.triu_indices(T_va.shape[0], k=1)].mean()
-    print(f"  similarité cosinus moyenne entre deux fiches de validation :"
-          f" BERT {sim_bert:.3f} · TF-IDF {sim_tfidf:.3f}")
+    sim_tfidf = np.asarray((T_va @ T_va.T).todense())[np.triu_indices(T_va.shape[0], k=1)].mean()
+    print(
+        f"  similarité cosinus moyenne entre deux fiches de validation :"
+        f" BERT {sim_bert:.3f} · TF-IDF {sim_tfidf:.3f}"
+    )
 
     # Les fiches que BERT rate et que TF-IDF classe bien.
     E_tr = encoder_variante(txt_tr, tok, mdl, device)
     pred_bert = tete().fit(E_tr, y_tr).predict(encoder_variante(txt_va, tok, mdl, device))
     pred_tfidf = tete().fit(vec.transform(txt_tr), y_tr).predict(T_va)
-    rattrapees = [(i, val.iloc[i]) for i in range(len(y_va))
-                  if pred_bert[i] != y_va[i] and pred_tfidf[i] == y_va[i]]
+    rattrapees = [
+        (i, val.iloc[i])
+        for i in range(len(y_va))
+        if pred_bert[i] != y_va[i] and pred_tfidf[i] == y_va[i]
+    ]
     print(f"  fiches ratées par BERT et rattrapées par TF-IDF : {len(rattrapees)}")
     for i, ligne in rattrapees[:3]:
-        print(f"    « {str(ligne['product_name']).strip()[:48]} » — "
-              f"{enc.classes_[y_va[i]]} lu {enc.classes_[pred_bert[i]]}")
+        print(
+            f"    « {str(ligne['product_name']).strip()[:48]} » — "
+            f"{enc.classes_[y_va[i]]} lu {enc.classes_[pred_bert[i]]}"
+        )
 
     print("\n" + table.to_string(index=False))
     print(f"\n→ {REPORTS / 'ablation_validation.csv'}")
