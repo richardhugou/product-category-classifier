@@ -34,7 +34,7 @@ body {
 }
 h1 {
   font-size: 19pt; color: #1a4d80; margin: 2.4em 0 0.8em;
-  padding-bottom: 0.3em; border-bottom: 2px solid #4c78a8; page-break-before: always;
+  padding-bottom: 0.3em; border-bottom: 2px solid #4c78a8; page-break-after: avoid;
 }
 h1:first-of-type { page-break-before: avoid; margin-top: 0; }
 h2 { font-size: 13.5pt; color: #24455f; margin: 1.9em 0 0.6em; page-break-after: avoid; }
@@ -62,7 +62,7 @@ pre {
 }
 pre code { background: none; padding: 0; color: #1f2328; }
 img {
-  max-width: 100%; height: auto; display: block; margin: 1.1em auto;
+  max-width: 78%; height: auto; display: block; margin: 1.1em auto;
   page-break-inside: avoid;
 }
 hr { border: none; border-top: 1px solid #dde3ea; margin: 2.2em 0; }

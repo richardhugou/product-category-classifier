@@ -2,108 +2,61 @@
 
 **À partir des descriptions textuelles et des photographies de produits**
 
-Richard Hugou — Data Scientist junior · août 2026
+Richard Hugou — août 2026
 
 ---
 
-# 1. Contexte et objectif de la mission
+# 1. Mission et objectif
 
-L'entreprise « Place de marché » prépare le lancement d'une marketplace en ligne anglophone, sur
-laquelle des vendeurs indépendants proposeront leurs articles à des acheteurs en publiant une
-photographie et une description.
+L'entreprise « Place de marché » prépare une marketplace anglophone où chaque vendeur publie une
+photographie, une description, et choisit lui-même la catégorie de son article. Ce fonctionnement ne
+tient pas à l'échelle : classements divergents, produits invisibles au filtrage. L'automatisation
+doit précéder la croissance du catalogue.
 
-Dans le fonctionnement prévu, chaque vendeur choisit lui-même la catégorie de son article au moment de
-la mise en ligne. Sur un catalogue réduit, cette organisation reste gérable. Elle devient plus
-difficile à tenir à mesure que le nombre de produits augmente : deux vendeurs peuvent classer des
-articles semblables à deux endroits différents, et un produit rangé au mauvais endroit devient plus
-difficile à retrouver. L'acheteur qui filtre par catégorie ne le voit pas, et le vendeur, lui, n'a
-aucun moyen de savoir pourquoi son article ne se vend pas.
+Question posée par Linda, Lead Data Scientist : les informations déjà présentes dans une fiche
+produit permettent-elles de retrouver automatiquement sa catégorie ?
 
-Le volume d'articles est aujourd'hui faible, et c'est précisément ce qui rend le moment opportun :
-l'automatisation doit être en place avant que le catalogue grossisse. L'enjeu est double — faciliter la
-mise en ligne pour les vendeurs, et fiabiliser la recherche pour les acheteurs.
+Trois demandes structurent l'étude :
 
-Linda, Lead Data Scientist, nous confie donc une étude de faisabilité, que nous menons en tant que
-Data Scientist junior. Il ne s'agit pas de construire ni de déployer le moteur définitif, mais de
-répondre à une question préalable dont dépend tout le reste : les informations déjà présentes dans une
-fiche produit — le texte de la description et la photographie — permettent-elles de retrouver
-automatiquement sa catégorie ?
+1. **Faisabilité** : représenter texte et image par des méthodes imposées (comptage, TF-IDF,
+   Word2Vec, BERT, USE ; SIFT, réseau convolutif en transfert), projeter, mesurer l'accord entre
+   clusters et catégories.
+2. **Classification supervisée** à partir des images, optimisée par data augmentation.
+3. **Collecte** de produits d'épicerie fine via une API publique.
 
-Sa demande précise la démarche attendue, et celle-ci donne son plan au présent rapport. Il faut d'abord
-prétraiter les données textuelles et visuelles, puis en extraire des caractéristiques numériques selon
-plusieurs méthodes nommément désignées : pour le texte, un comptage simple de mots, une pondération
-TF-IDF, un embedding de mots de type Word2Vec, puis deux approches de représentation de phrase, BERT
-et USE ; pour l'image, une méthode à points d'intérêt de type SIFT et un réseau convolutif utilisé en
-transfert. Il faut ensuite projeter les produits en deux dimensions pour les observer, analyser
-graphiquement si les catégories se dessinent, et confirmer cette analyse visuelle par une mesure
-comparant les catégories réelles à une segmentation en clusters. Une seconde étape demande une
-classification supervisée à partir des images, optimisée par data augmentation. Une troisième, enfin,
-consiste à tester la collecte de produits d'épicerie fine via une API publique, dans la perspective
-d'élargir la gamme.
-
-Une précision avant d'entrer dans le sujet. Nous travaillons sur un échantillon, avec des moyens de
-calcul modestes, et sur des données qui ont leurs propres défauts. Les conclusions valent pour ce
-périmètre, et nous signalerons à chaque fois ce qui se transpose à un catalogue réel et ce qui
-demanderait à être revérifié.
+Périmètre : un échantillon de 1 050 produits, des moyens de calcul locaux. Les conclusions valent
+pour ce cadre.
 
 ---
 
-# 2. Découverte et préparation des données
+# 2. Données
 
-Le jeu de données transmis par Linda contient 1 050 articles répartis dans 7 catégories, à raison de
-150 produits chacune. Chaque article dispose d'une description rédigée en anglais par le vendeur et
-d'une photographie, ainsi que d'une quinzaine de champs annexes — prix, note, identifiants — que la
-mission ne retient pas puisqu'elle porte explicitement sur le texte et l'image.
-
-Le meilleur moyen de comprendre ce jeu est d'en ouvrir une entrée. Prenons une montre, que nous
-garderons sous la main jusqu'à la fin de l'étude :
+**Exemple de référence — V9 METAL STRAP Analog Watch.** Conservé tout au long de l'étude.
 
 | Champ | Contenu |
 |---|---|
 | `product_name` | V9 METAL STRAP Analog Watch – For Men |
 | `description` | *Specifications of V9 METAL STRAP Analog Watch – For Men. General Type Analog. Style Code METAL STRAP. Occasion Casual. Ideal For Men. Warranty NO. Body Features Dial Shape Round. Strap Color STEEL. Dial Color BLACK.* |
 | `product_category_tree` | `["Watches >> Wrist Watches >> V9 Wrist Watches >> ..."]` |
-| `image` | une photographie de 1 152 × 1 816 pixels |
+| `image` | photographie de 1 152 × 1 816 pixels |
 
-La catégorie que nous cherchons à prédire n'est pas donnée directement : elle est enfouie dans une
-chaîne décrivant tout un chemin d'arborescence, mal formée, avec des guillemets échappés de façon
-incohérente. Nous en extrayons le premier niveau, ce qui produit les sept catégories annoncées —
-*Baby Care*, *Beauty and Personal Care*, *Computers*, *Home Decor & Festive Needs*, *Home Furnishing*,
-*Kitchen & Dining* et *Watches*. Descendre d'un niveau supplémentaire donnerait des dizaines de classes
-ne comptant que quelques produits, ce qui n'est pas exploitable à cette échelle. Notre cible est donc
-définie sans ambiguïté, mais sa fiabilité reste limitée : c'est le vendeur qui a choisi cette
-catégorie, et c'est précisément parce que ce choix est faillible que la mission existe. Nous y
-reviendrons au moment d'interpréter les résultats.
+Corpus : 1 050 articles, 7 catégories de 150 exactement — *Baby Care*, *Beauty and Personal Care*,
+*Computers*, *Home Decor & Festive Needs*, *Home Furnishing*, *Kitchen & Dining*, *Watches*. La
+cible est le premier niveau de l'arborescence `product_category_tree`. Elle est déclarée par les
+vendeurs : la référence d'évaluation est donc elle-même faillible (repris en partie 8).
 
-## Ce que contiennent réellement les descriptions et les photographies
+Constats sur les entrées :
 
-La description de notre montre illustre une caractéristique générale du corpus : ce ne sont pas des
-textes rédigés. Le vendeur a rempli un formulaire de spécifications, que la plateforme a aplati en une
-suite de mots. On y retrouve le nom du produit répété plusieurs fois, des paires attribut-valeur
-collées les unes aux autres, et parfois des fautes de frappe. Les descriptions comportent entre 13 et
-587 mots, avec une médiane de 44.
-
-Cette dispersion n'est pas répartie au hasard entre les catégories. Un article de *Home Furnishing* se
-décrit en 24 mots médians, un article de *Kitchen & Dining* en 88 — près de quatre fois plus. Les sept
-catégories sont donc parfaitement équilibrées en nombre de produits, mais pas du tout en quantité
-d'information disponible. Ce point mérite d'être noté dès maintenant, car il explique en partie
-pourquoi certaines catégories seront plus difficiles à retrouver que d'autres.
+- Descriptions : des formulaires de spécifications aplatis, non des textes rédigés. 13 à 587 mots,
+  médiane 44. Longueur médiane variable selon la catégorie : *Home Furnishing* 24 mots ;
+  *Kitchen & Dining* 88.
+- Photographies : 890 tailles distinctes sur 1 050 fichiers ; ratios de 0,23 à 4,36 ; maximum
+  93 mégapixels. Harmonisation selon la méthode consommatrice.
 
 ![Équilibre des classes et distribution des longueurs de description](../reports/fig4_donnees.png)
 
-Les photographies présentent une hétérogénéité comparable, sous une autre forme. Sur les 1 050
-fichiers, on compte 890 tailles distinctes ; la plus fréquente, 1 100 × 844 pixels, ne concerne que
-23 images. Les rapports largeur/hauteur s'échelonnent de 0,23 à 4,36, et le plus gros fichier atteint
-93 mégapixels. Notre montre, avec ses 1 152 × 1 816 pixels, est un format vertical parmi beaucoup
-d'autres. Les méthodes d'extraction que nous emploierons ensuite attendent chacune un format d'entrée
-précis : les images devront donc être harmonisées en fonction de leurs contraintes respectives.
-
-## Ce que nous écartons, et comment nous préparons le reste
-
-Un champ mérite une attention particulière avant d'aller plus loin. Le champ `brand` est renseigné pour
-712 produits sur 1 050 ; il manque donc dans 32 % des cas. On serait tenté de le conserver et d'ajouter
-un indicateur signalant son absence, ce qui est une pratique courante. Ce serait ici une erreur, car
-ces valeurs manquantes ne sont pas réparties au hasard :
+**Champ `brand` exclu** : 32 % de valeurs manquantes, absence fortement corrélée à la catégorie —
+95 % des 338 absences se concentrent sur trois catégories.
 
 | Catégorie | Marque absente |
 |---|---|
@@ -115,175 +68,55 @@ ces valeurs manquantes ne sont pas réparties au hasard :
 | Computers | 0 / 150 |
 | Home Furnishing | 0 / 150 |
 
-Parmi les 338 produits sans marque, 95 % appartiennent à trois catégories seulement, et aucun produit
-d'informatique ou d'ameublement n'a la case vide. Autrement dit, le seul fait que le champ soit vide
-renseigne fortement sur la catégorie — pour une raison qui tient aux habitudes de saisie des vendeurs
-et non à la nature des produits. Un modèle qui recevrait cette information apprendrait à lire cette
-habitude plutôt que le produit, et ses performances s'effondreraient dès qu'un vendeur de montres se
-mettrait à renseigner sa marque. Nous écartons donc ce champ, indicateur d'absence compris.
+Un modèle recevant ce champ apprendrait une habitude de saisie, pas le produit. Exclusion,
+indicateur d'absence compris.
 
-Le prétraitement du texte suit ensuite une chaîne classique : passage en minuscules, suppression de la
-ponctuation et des chiffres isolés, découpage en mots, puis retrait des mots-outils anglais — *of*,
-*for*, *the* — qui apparaissent partout et ne distinguent rien. Appliquée à notre montre, cette chaîne
-ramène 34 mots bruts à 29 tokens retenus :
-
-```
-specifications · metal · strap · analog · watch · men · general · type · analog · style · code ·
-metal · strap · occasion · casual · ideal · men · warranty · body · features · dial · shape ·
-round · strap · color · steel · dial · color · black
-```
-
-Nous ne pratiquons ni racinisation ni lemmatisation. Sur un vocabulaire de fiches produit, `bedsheet`
-et `bedsheets` portent la même information et sont appris sans difficulté ; en revanche, tronquer les
-mots détruirait des références de modèles comme `7007YL08`, qui sont parfois les termes les plus
-discriminants d'une fiche.
-
-Du côté des images, le traitement dépend de la méthode qui les consommera. Pour le réseau convolutif,
-chaque photographie est convertie en RGB, redimensionnée en carré de 224 pixels et normalisée selon les
-statistiques du jeu sur lequel ce réseau a été entraîné, faute de quoi ses représentations perdraient
-leur sens. Pour SIFT, qui travaille sur l'intensité lumineuse et non sur la couleur, les images sont
-converties en niveaux de gris, égalisées en contraste et ramenées à 256 pixels de côté. Une même
-photographie donne donc deux entrées différentes selon l'usage, ce qui est normal : la préparation
-n'est pas une étape neutre, elle est déjà un choix de méthode.
-
-À ce stade, nous savons ce que contient le jeu, ce qu'il vaut et ce que nous en écartons. Il reste que
-ni une description ni une photographie ne peuvent être comparées directement à une autre par un
-algorithme, qui ne manipule que des nombres. C'est l'objet de la partie suivante.
+**Prétraitement.** Texte : minuscules · suppression ponctuation et chiffres isolés · découpage ·
+retrait des mots-outils anglais. Sur l'exemple de référence : 34 mots bruts → 29 tokens. Ni
+racinisation ni lemmatisation : la troncature détruirait des références de modèles (`7007YL08`),
+souvent les termes les plus discriminants. Image : RGB · 224 × 224 · normalisation ImageNet pour le
+réseau convolutif ; niveaux de gris · égalisation · 256 × 256 pour SIFT.
 
 ---
 
-# 3. Étude de faisabilité à partir du texte et des images
+# 3. Faisabilité non supervisée
 
-Linda demande de vérifier si les produits d'une même catégorie se regroupent spontanément une fois
-traduits en représentations numériques, et impose pour cela des méthodes précises : cinq pour le texte,
-deux familles pour l'image. Nous les appliquons toutes au même corpus et, pour pouvoir les comparer
-entre elles, à la même montre.
+Protocole : les catégories ne servent qu'à colorier les graphiques et à mesurer l'accord final,
+jamais à construire les représentations, ajustées sur les 1 050 produits. Étape descriptive de
+faisabilité sur tout le corpus ; l'évaluation indépendante d'un modèle supervisé vient ensuite,
+avec son propre protocole.
 
-Une précision de protocole avant de commencer. Cette étude est non supervisée : les catégories ne
-servent qu'à colorier les graphiques et à mesurer l'accord final, jamais à construire les
-représentations. Nous pouvons donc les ajuster sur l'ensemble des 1 050 produits sans risquer la
-moindre fuite d'information. La question posée n'est pas encore « savons-nous prédire ? » mais
-« l'information est-elle présente ? ».
+| Représentation | Modalité | Dimensions | Principe |
+|---|---|---|---|
+| Comptage de mots | texte | 2 444 | occurrences par terme · référence rudimentaire |
+| Comptage + bigrammes | texte | 5 000 | ajout des paires de mots |
+| TF-IDF | texte | 5 000 | comptage pondéré par la rareté |
+| Word2Vec | texte | 300 | moyenne de vecteurs de mots, appris sur le corpus |
+| BERT | texte | 768 | encodeur contextuel pré-entraîné, figé, moyenné |
+| USE | texte | 512 | encodeur de phrase pré-entraîné (annexe C) |
+| SIFT + BoVW | image | 256 | points d'intérêt locaux → 256 mots visuels |
+| CNN (VGG16) | image | 512 | réseau pré-entraîné ImageNet, tête retirée |
 
-## Représenter le texte
-
-Le **comptage simple de mots** est la méthode la plus directe : on établit le vocabulaire du corpus,
-puis on compte combien de fois chaque mot apparaît dans chaque description. Le vocabulaire ainsi
-obtenu compte 2 444 mots, et chaque produit devient une liste de 2 444 nombres dont la grande majorité
-vaut zéro. Notre montre en a 22 non nuls, les plus élevés étant `strap` (3 occurrences), puis `analog`,
-`color`, `dial`, `men` et `metal` (2 chacun). C'est la référence la plus rudimentaire que l'on puisse
-construire, et c'est à ce titre qu'elle sert : toutes les méthodes qui suivent devront justifier leur
-coût par rapport à elle.
-
-Une première variante consiste à compter aussi les paires de mots, ce qui permet de distinguer *round
-strap* de *round* et *strap* pris séparément. Le vocabulaire passe alors à 5 000 termes, et notre
-montre à 42 valeurs non nulles. Nous conservons les deux versions, précisément parce que seule cette
-option change de l'une à l'autre : l'écart entre elles ne peut donc venir que des paires.
-
-Le **TF-IDF** reprend ce comptage et le pondère par la rareté du terme dans le corpus : un mot présent
-dans toutes les fiches ne distingue rien et doit peser peu. L'effet se lit directement sur notre montre.
-Le terme `color`, qui arrivait en tête avec le comptage simple, disparaît des premiers rangs parce
-qu'il apparaît dans presque toutes les fiches du catalogue, quelle que soit la catégorie. Ce sont
-`metal` et `strap` qui dominent :
-
-| Terme | Comptage simple | TF-IDF |
-|---|---|---|
-| strap | 3 | 0,246 |
-| metal | 2 | **0,272** |
-| color | 2 | *sort du classement* |
-| dial | 2 | 0,199 |
-| strap analog | 1 | 0,215 |
-| round strap | 1 | 0,181 |
+Effet de la pondération TF-IDF sur l'exemple de référence : `color` (présent partout) sort du
+classement ; `metal` (0,272) et `strap` (0,246) dominent.
 
 ![La chaîne de transformation, sur un article réel](../reports/fig3_transformations.png)
 
-Ces deux représentations partagent une propriété précieuse : chaque dimension correspond à un terme que
-l'on peut nommer, ce qui permettrait plus tard d'expliquer une décision. Elles partagent aussi une
-limite : elles ignorent le sens. Pour elles, *sofa* et *couch* sont deux dimensions étrangères l'une à
-l'autre, sans aucun lien.
-
-C'est ce que les trois méthodes suivantes cherchent à corriger. **Word2Vec** apprend un vecteur par
-mot, de telle sorte que deux mots employés dans des contextes semblables se retrouvent proches ; la
-description devient la moyenne des vecteurs de ses mots, soit 300 nombres. Nous entraînons ce modèle
-sur nos 1 050 descriptions, ce qui est peu pour apprendre une sémantique — nous verrons que le résultat
-s'en ressent. **BERT** apporte un contexte : chaque mot reçoit une représentation qui dépend de ses
-voisins, si bien que *mouse* n'a pas le même vecteur dans une fiche informatique et dans une fiche
-animalerie. Nous utilisons le modèle tel quel, sans le réentraîner, et moyennons ses sorties pour
-obtenir 768 nombres par produit. **USE**, enfin, est entraîné à représenter une phrase entière plutôt
-que des mots que l'on moyennerait ensuite, et produit 512 nombres. Nous employons le modèle de
-référence publié par ses auteurs ; les précautions techniques que cela a demandées sont décrites en
-annexe C.
-
-## Représenter les images
-
-**SIFT** procède tout autrement. Plutôt que de décrire l'image entière, il repère les points
-remarquables — coins, contrastes marqués, motifs — et décrit chacun par 128 nombres caractérisant son
-voisinage immédiat. Sur la photographie de notre montre, il en détecte 508. Le problème est que ce
-nombre varie d'une image à l'autre, alors qu'il nous faut des vecteurs de taille identique pour
-comparer les produits. La solution classique consiste à construire un vocabulaire visuel : on rassemble
-les 482 202 descripteurs extraits des 1 050 photographies, on les regroupe en 256 familles, et chaque
-image devient l'histogramme du nombre de ses points tombant dans chaque famille. C'est exactement la
-logique du sac de mots appliquée à l'image, avec des « mots visuels » à la place des termes.
-
-Le **réseau convolutif en transfert** repose sur une idée différente. Nous prenons VGG16, entraîné à
-reconnaître un millier d'objets sur ImageNet, et nous lui retirons sa couche de classification finale.
-Ce qui reste est un extracteur : l'image entre, et il en sort 512 nombres qui résument ce que le réseau
-y a reconnu. Le réseau n'est pas réentraîné sur nos produits — nous réutilisons tel quel ce qu'il a
-appris ailleurs, ce qui est précisément le principe du transfert.
-
-À ce stade, chaque produit existe sous sept formes numériques différentes, de 256 à 5 000 dimensions.
-Reste à savoir laquelle rapproche les produits d'une même catégorie.
-
-## Projeter et regarder
-
-Un espace à 512 ou 5 000 dimensions ne se visualise pas. Nous le réduisons donc en deux temps : une
-analyse en composantes principales ramène d'abord chaque représentation à 50 dimensions en conservant
-l'essentiel de sa variance, puis t-SNE la met en plan. Ce second algorithme cherche à préserver les
-voisinages plutôt que les distances globales, ce qui a une conséquence de lecture importante : sur les
-graphiques qui suivent, la proximité entre deux points a un sens, mais ni l'échelle des axes ni la
-distance entre deux îlots éloignés n'en ont.
-
-Une précaution a été nécessaire avant de projeter. Les descriptions n'ayant pas toutes la même
-longueur, un produit bavard occupe mécaniquement une position plus éloignée de l'origine qu'un produit
-laconique, alors que la longueur du texte ne dit rien de sa catégorie. Nous ramenons donc chaque produit
-à une longueur unitaire. La tentation inverse — standardiser chaque dimension pour qu'elles aient toutes
-la même variance — aurait été plus dommageable encore : sur 5 000 dimensions dont la plupart sont vides,
-elle revient à donner à un terme apparu trois fois dans tout le corpus le même poids qu'à un terme
-structurant. Nous l'avions d'abord fait, et l'accord mesuré sur la représentation TF-IDF complète
-tombait alors à 0,001, c'est-à-dire au niveau du hasard.
+**Projection.** ACP à 50 composantes puis t-SNE. Chaque produit est préalablement ramené à une
+longueur unitaire — la standardisation par dimension, testée d'abord, amplifiait les termes rares
+au point de ramener l'accord TF-IDF à 0,001 (partie 9). Lecture t-SNE : proximités significatives,
+échelle des axes non.
 
 ![Les sept projections, couleur : catégorie réelle](../reports/fig5_projections.png)
 
-La lecture de ces graphiques est assez directe. Les représentations de texte produisent toutes une
-structure partielle : quelques îlots nettement colorés — les montres, l'informatique — et un centre où
-plusieurs catégories se mélangent. La projection issue de VGG16 est la plus organisée, avec des zones
-colorées larges et peu d'interpénétration. Celle de SIFT, à l'inverse, est un nuage homogène dans
-lequel aucune couleur ne se détache : les points de toutes les catégories y sont répartis
-uniformément.
+Structure partielle pour les représentations textuelles ; projection VGG16 la plus organisée ;
+nuage homogène pour SIFT.
 
-## Mesurer pour confirmer
-
-L'œil peut se tromper, et une projection en deux dimensions déforme nécessairement. Linda demande donc
-une mesure, et nous procédons comme suit : nous masquons les catégories, nous laissons un algorithme de
-partitionnement (K-means) former sept groupes à partir des seules représentations, puis nous comparons
-ces groupes aux vraies catégories à l'aide de l'indice de Rand ajusté.
-
-Cet indice compare deux découpages d'un même ensemble. Il vaut 1 lorsqu'ils coïncident et 0 lorsque
-leur accord n'excède pas ce que produirait le hasard. L'ajustement est essentiel ici : avec sept groupes
-de tailles voisines, deux découpages tirés au sort présentent déjà un accord apparent non négligeable,
-que l'indice brut compterait à tort comme un succès.
-
-Un point mérite d'être souligné, car la confusion est facile et fausserait toute la lecture qui suit :
-**un indice de 0,51 ne signifie pas que 51 % des produits sont correctement catégorisés.** Ce n'est pas
-une proportion. C'est une mesure de correspondance entre deux partitions, et les groupes formés n'ont
-d'ailleurs pas de nom — rien ne dit *a priori* lequel correspond aux montres. La question posée à ce
-stade est seulement de savoir si le découpage produit sans étiquettes ressemble au découpage
-commercial, pas de compter des bonnes réponses.
-
-Nous rapportons cette mesure deux fois. Une première sur la projection, puisque c'est elle que nous
-avons regardée et que la mission demande de confirmer l'analyse visuelle. Une seconde sur la
-représentation complète, avant réduction, car t-SNE déforme et il serait commode de ne retenir que le
-plus flatteur des deux chiffres.
+**Mesure.** Catégories masquées · K-means à 7 groupes · indice de Rand ajusté (1 : partitions
+identiques ; 0 : accord équivalent au hasard). Règle de lecture : **un indice de 0,51 ne signifie
+pas que 51 % des produits sont correctement catégorisés** — c'est une correspondance entre deux
+partitions, pas une proportion. Mesure rapportée deux fois : sur la projection et sur la
+représentation complète, t-SNE déformant.
 
 | Représentation | Source | Dimensions | Accord sur la projection | Accord avant réduction |
 |---|---|---|---|---|
@@ -298,139 +131,57 @@ plus flatteur des deux chiffres.
 
 ![Accord entre les groupes trouvés et les catégories réelles](../reports/fig7_ari.png)
 
-Quatre observations ressortent de ce tableau.
+Constats :
 
-L'image l'emporte nettement, mais à condition d'être traitée par le bon outil. VGG16 atteint 0,510
-quand SIFT ne produit qu'un accord très faible, proche du hasard, alors que les deux méthodes reçoivent
-exactement les mêmes photographies. L'écart s'explique : SIFT décrit des motifs locaux — un angle, une
-texture, un contraste — utiles pour reconnaître qu'une même scène a été photographiée deux fois, mais
-qui ne disent rien de ce qu'est l'objet. VGG16, entraîné à reconnaître des objets, produit une
-description de nature sémantique. C'est un résultat instructif sur le plan méthodologique : une méthode
-reconnue peut se révéler inadaptée non par manque de qualité, mais parce qu'elle répond à une autre
-question que la nôtre.
-
-VGG16 est aussi la seule représentation dont l'accord est meilleur avant réduction qu'après. Les
-catégories y sont donc réellement séparées dans l'espace d'origine, et non révélées par le passage en
-deux dimensions. Pour les représentations textuelles, l'écart entre les deux colonnes va dans l'autre
-sens : la structure existe, mais elle est plus difficile à isoler directement. C'est là que la double
-mesure prend tout son sens — lue seule, la colonne de gauche aurait accordé aux méthodes textuelles une
-netteté que l'espace d'origine ne confirme pas.
-
-Du côté du texte, USE se détache avec 0,440, tandis que les cinq autres méthodes se tiennent entre
-0,300 et 0,325. Le résultat le plus frappant est que le comptage simple de mots (0,306) fait
-pratiquement jeu égal avec BERT (0,316), et le devance même dans l'espace complet — 0,270 contre 0,288
-pour BERT, mais surtout contre 0,214 pour TF-IDF. Sur des fiches de spécifications, où le vocabulaire
-est très discriminant et la syntaxe quasi absente, comprendre le contexte n'apporte presque rien de
-plus que compter les mots. Word2Vec, entraîné sur seulement 1 050 descriptions, arrive dernier, ce qui
-était prévisible au vu du volume disponible.
-
-L'apport des bigrammes, enfin, est ambigu. Ils font gagner un point sur la projection (0,306 → 0,316)
-mais en font perdre quatre dans l'espace complet (0,270 → 0,227). Multiplier par deux la taille du
-vocabulaire ne rend donc pas la structure plus nette ; cela la disperse. Le résultat n'était pas acquis
-d'avance, et il justifie d'avoir gardé les deux versions plutôt que d'ajouter les paires de mots par
-habitude.
-
-## Ce que l'étude établit
+- Sur les mêmes photographies, VGG16 atteint 0,510 ; SIFT reste proche du hasard. SIFT décrit des
+  motifs locaux, VGG16 des objets : une méthode reconnue peut répondre à une autre question que
+  celle posée.
+- VGG16 est la seule représentation meilleure avant réduction qu'après : la séparation existe dans
+  l'espace d'origine.
+- Côté texte, USE se détache (0,440) ; le comptage simple fait jeu égal avec BERT — vocabulaire
+  discriminant, syntaxe quasi absente. Word2Vec, appris sur 1 050 descriptions, arrive dernier.
+  Bigrammes : +0,010 en projection, −0,043 en espace complet.
 
 ![VGG16 : catégories réelles à gauche, groupes formés sans étiquettes à droite](../reports/fig6_clusters.png)
 
-Le tableau croisé des sept groupes formés par VGG16 et des sept catégories réelles montre une
-correspondance de un à un : chaque catégorie a son groupe dominant, et aucun groupe n'en accueille deux
-majoritairement. L'informatique et les montres sont retrouvées à 87 % et 86 %, la beauté à 80 %.
+Correspondance groupe-catégorie de un à un pour VGG16 (informatique 87 %, montres 86 %, beauté
+80 %). Deux zones de confusion : un groupe de textiles imprimés photographiés à plat mêle *Home
+Furnishing* et *Baby Care* (69 produits déplacés) ; 31 objets décoratifs de *Home Decor* partent
+vers l'ameublement. Regroupement par matière et mise en scène d'un côté, par usage commercial de
+l'autre.
 
-Deux catégories résistent, et l'examen des produits concernés éclaire pourquoi. *Home Furnishing* se
-scinde presque en deux : 71 produits dans son groupe, 69 dans celui de *Baby Care*. En regardant ce que
-contient cette seconde moitié, on trouve des housses de coussin, des couettes, des tapis de bain — et
-dans le groupe *Baby Care* qui les accueille, des serviettes en coton, des ensembles pyjama pour bébé
-et des protège-matelas. Ce groupe ne correspond à aucune des deux catégories : il rassemble des
-textiles imprimés photographiés à plat. L'algorithme a regroupé par matière et par mise en scène, ce
-qui est ce qu'on lui a demandé de faire, alors que la nomenclature du site regroupe par usage
-commercial. Une couette et un pyjama de bébé n'ont rien en commun pour un acheteur ; ils se ressemblent
-beaucoup pour un réseau de vision.
-
-La même mécanique semble expliquer le second point faible, *Home Decor & Festive Needs*, dont 31
-produits partent dans le groupe de l'ameublement : porte-clés en bois, statuettes, décorations
-murales — des objets décoratifs photographiés seuls, comme le sont beaucoup d'articles d'ameublement.
-
-Nous pouvons donc répondre à la question de Linda. L'information nécessaire à la catégorisation est
-bien présente dans les données fournies, et elle l'est suffisamment pour que des groupes cohérents
-émergent sans qu'aucune étiquette n'ait été montrée. Les photographies traitées par un réseau
-pré-entraîné constituent la source la plus prometteuse, devant les descriptions textuelles. Quant aux
-confusions résiduelles, elles semblent tenir à un écart entre deux logiques de regroupement, l'une
-visuelle et l'autre commerciale — nous verrons dans la partie suivante si la supervision les résorbe.
+Conclusion de l'étape : l'information nécessaire à la catégorisation est présente dans les données
+fournies. Dans cette étude non supervisée, l'image traitée par un réseau pré-entraîné en est la
+source la plus prometteuse.
 
 ---
 
 # 4. Classification supervisée des images
 
-L'étude précédente a montré que les caractéristiques extraites par un réseau convolutif organisent le
-catalogue sans qu'on ait eu besoin de montrer une seule étiquette. Linda demande maintenant d'aller
-plus loin sur cette piste : puisque l'information est présente dans les photographies, que devient la
-performance lorsqu'on entraîne réellement un modèle à prédire la catégorie ?
+Protocole : découpe stratifiée figée des 1 050 produits — 735 entraînement · 157 validation · 158
+test. Toute décision est prise sur la validation ; le jeu de test n'est ouvert qu'une fois, pour le
+seul modèle retenu. Cette règle corrige une erreur commise en cours d'étude : une première
+comparaison des stratégies avait été lue sur le test (partie 9).
 
-La question change de nature, et le protocole avec elle. Tant qu'on cherchait à savoir si des groupes
-existaient, tout le corpus pouvait servir, puisqu'aucune étiquette n'entrait dans le calcul. Il faut à
-présent réserver des produits que le modèle ne verra pas pendant son apprentissage, faute de quoi la
-performance mesurée ne dirait rien de son comportement sur un article nouveau. Nous découpons donc les
-1 050 produits en trois parts stratifiées et fixées une fois pour toutes : 735 pour l'entraînement, 157
-pour la validation, 158 réservés à l'évaluation finale.
+Modèle : VGG16 figé en extracteur (512 caractéristiques) + tête de classification apprise. Choix
+méthodologique : au vu du volume (735 images) et de l'objectif de comparaison, l'extracteur figé
+limite le surapprentissage et isole la qualité de la représentation ; le réglage fin relèverait
+d'une expérimentation dédiée. Sur l'exemple de référence (jeu de test, avant augmentation) :
+*Watches*, probabilité 0,977.
 
-Cette découpe en trois, plutôt qu'en deux, mérite qu'on s'y arrête, car elle a corrigé une erreur de
-notre part. Nous avions d'abord comparé plusieurs stratégies d'entraînement directement sur le jeu de
-test, puis retenu la meilleure. Le procédé paraît anodin, mais dès lors que le résultat du test oriente
-le choix suivant, ce jeu mesure la qualité de notre sélection autant que celle du modèle. Le jeu de
-validation existe précisément pour absorber ces comparaisons. Toutes les décisions qui suivent sont donc
-prises sur les 157 produits de validation, et le jeu réservé n'est ouvert qu'ensuite, avec le seul
-modèle retenu.
+**Data augmentation.** Quatre configurations, sur transformations plausibles pour des photographies
+de catalogue :
 
-Le modèle lui-même reprend le réseau de la partie précédente. VGG16 conserve ses poids d'origine et sert
-d'extracteur ; seule une petite tête de classification est apprise par-dessus. C'est le protocole
-habituel du transfert, et le seul raisonnable ici : réajuster les 138 millions de paramètres du réseau
-sur 735 images conduirait à ce qu'il apprenne ces images plutôt que la tâche.
-
-Le fonctionnement se résume simplement. La photographie entre dans le réseau figé, qui en produit 512
-nombres ; la tête reçoit ces 512 nombres et rend 7 probabilités, une par catégorie. Sur la photographie
-de notre montre — qui appartient au jeu réservé et n'a donc jamais servi à l'apprentissage — la réponse
-est *Watches* — à ce stade, c'est-à-dire avant toute augmentation — avec une probabilité de 0,977, la
-deuxième catégorie la plus probable ne recueillant que 0,011. C'est un cas facile : une montre sur
-fond blanc ne ressemble à rien d'autre dans le catalogue.
-
-## Chercher à faire mieux : la data augmentation
-
-Linda demande de mettre en place une data augmentation pour tenter d'améliorer le modèle. Le principe
-consiste à fabriquer artificiellement de nouvelles images d'entraînement en transformant celles dont on
-dispose : les retourner, les faire pivoter légèrement, les recadrer, en modifier le contraste. Le modèle
-voit ainsi plus d'exemples, et devrait apprendre à reconnaître un produit indépendamment de la façon
-dont il a été photographié.
-
-Le choix des transformations n'est pas neutre. Nos images sont des photographies de catalogue,
-généralement centrées et cadrées de la même manière. Un retournement horizontal ou une légère rotation
-restent plausibles — le même article aurait pu être photographié dans l'autre sens. Un retournement
-vertical, en revanche, produirait des images qu'on ne rencontrera jamais.
-
-Nous testons quatre stratégies, et cette variété fait partie du raisonnement : conclure à partir d'un
-seul réglage laisserait ouverte l'objection qu'il était mal choisi. Une augmentation dite douce se
-limite au retournement horizontal et à une rotation de dix degrés. Une augmentation forte y ajoute un
-recadrage aléatoire, une rotation de quinze degrés et une variation de couleur. Chacune est appliquée
-quatre fois par image, et la version forte est aussi testée à huit fois pour observer l'effet du volume.
-
-| Stratégie | Images d'entraînement | F1 macro sur la validation |
+| Stratégie | Images d'entraînement | F1 macro (validation) |
 |---|---|---|
 | Augmentation douce ×4 | 3 675 | **0,828** |
 | Augmentation forte ×4 | 3 675 | 0,827 |
 | Sans augmentation | 735 | 0,822 |
 | Augmentation forte ×8 | 6 615 | 0,815 |
 
-Sur le jeu de validation, l'augmentation douce obtient le meilleur score, mais le gain de 0,006 point de
-F1 macro — soit moins d'un produit sur 157 — est trop faible pour conclure à une amélioration nette. Les
-transformations douces et fortes appliquées quatre fois donnent des résultats très proches de la
-référence. Une augmentation plus forte et répétée, en revanche, dégrade nettement la performance. Une
-explication possible tient à la nature très standardisée des photographies du catalogue : multiplier les
-transformations artificielles peut éloigner les images d'entraînement de la distribution réellement
-observée. C'est une hypothèse plausible, que ces quatre essais ne suffisent pas à démontrer.
-
-Le résultat est en revanche plus intéressant lorsqu'on le regarde catégorie par catégorie, car
-l'augmentation n'est pas sans effet : elle déplace les erreurs.
+Écart maximal : 0,006 point de F1 macro — insuffisant, sur cet échantillon de validation, pour
+conclure à une amélioration nette. La lecture par catégorie est plus informative : l'augmentation
+déplace les erreurs.
 
 | Catégorie | Sans | Douce ×4 | Forte ×4 | Forte ×8 |
 |---|---|---|---|---|
@@ -444,279 +195,152 @@ l'augmentation n'est pas sans effet : elle déplace les erreurs.
 
 ![L'augmentation déplace les erreurs plutôt qu'elle ne les supprime](../reports/fig9_augmentation_par_classe.png)
 
-*Baby Care*, la catégorie la plus fragile sans augmentation, gagne près de sept points à mesure que
-l'augmentation s'intensifie. *Home Decor* progresse également. Mais *Computers* et *Home Furnishing*
-suivent le chemin inverse et perdent respectivement six et neuf points. La moyenne ne bouge pas parce
-que les gains et les pertes se compensent.
+Gains et pertes se compensent : une augmentation uniforme n'est probablement pas la bonne
+stratégie. Configuration retenue selon la règle fixée d'avance : augmentation douce ×4, avantage
+non établi.
 
-Ce constat suggère qu'une augmentation générique, appliquée uniformément à tout le catalogue, n'est
-probablement pas la meilleure stratégie. Les catégories ne réagissent pas de la même manière aux mêmes
-transformations, et des traitements adaptés aux types de produits mériteraient d'être explorés.
-
-Nous retenons donc l'augmentation douce, qui arrive en tête selon la règle de sélection fixée d'avance,
-en sachant que son avantage n'est pas établi.
-
-## Le résultat sur le jeu réservé
-
-Le choix étant figé, nous ouvrons les 158 produits mis de côté. Le modèle en classe correctement 137,
-soit une exactitude de 86,7 % et une F1 macro de 0,867. Vingt et une erreurs, donc, à partir des seules
-photographies.
-
-Ce chiffre mérite d'être situé. Il est obtenu avec un réseau dont aucun poids n'a été réentraîné, sur
-735 images d'entraînement, et sans utiliser une seule ligne de description. Pour une étude de
-faisabilité, c'est une démonstration solide que l'image seule porte une part importante de
-l'information.
+**Évaluation finale.** Jeu de test, une seule ouverture : **137 / 158 produits correctement
+classés · exactitude 86,7 % · F1 macro 0,867** — extracteur figé, sans texte.
 
 ![Matrice de confusion sur le jeu réservé](../reports/fig8_confusion_image.png)
 
-La matrice de confusion prolonge directement l'analyse de la partie précédente. Les deux erreurs les
-plus nombreuses concernent *Computers*, dispersé vers *Home Decor* et *Kitchen & Dining* à trois
-reprises chacune. Mais l'échange le plus significatif est ailleurs : deux *Baby Care* sont prédits
-*Home Furnishing*, et deux *Home Furnishing* sont prédits *Baby Care*. C'est la confusion que le
-regroupement sans étiquettes avait déjà fait apparaître, lorsque les housses de coussin et les couettes
-se retrouvaient dans le même groupe que les serviettes en coton et les pyjamas de bébé.
-
-Cette continuité est le résultat le plus instructif de cette partie. La réapparition de la même
-confusion dans deux approches très différentes — l'une sans étiquettes, l'autre supervisée — suggère
-qu'elle ne dépend pas uniquement du modèle employé, et qu'il existe une ambiguïté réelle entre certaines
-images de ces deux catégories. La supervision la réduit sans la faire disparaître.
+La confusion *Baby Care* ↔ *Home Furnishing* (2 + 2 erreurs) reproduit celle de l'étude non
+supervisée : ambiguïté réelle entre certaines images, réduite par la supervision, non éliminée.
 
 ---
 
-# 5. Collecte de nouveaux produits via une API
+# 5. Extension expérimentale : benchmark de représentations
 
-La dernière demande de Linda est indépendante du modèle. La marketplace envisage d'élargir sa gamme à
-l'épicerie fine, et il s'agit d'éprouver la faisabilité de la collecte avant d'envisager quoi que ce
-soit d'autre : peut-on récupérer automatiquement des produits, avec les informations nécessaires ?
+Au-delà des méthodes demandées, deux questions sont mesurées sur le même protocole : des
+extracteurs pré-entraînés plus récents produisent-ils de meilleures représentations sur ce
+corpus ? Et que vaut la combinaison des deux modalités ?
 
-Deux sources étaient proposées. Nous retenons Open Food Facts, parce qu'elle ne demande aucune
-inscription : le script reste exécutable tel quel par un tiers, sans clé à transmettre ni compte à
-créer. Cette base est alimentée de façon collaborative, ce qui aura son importance au moment de lire les
-résultats.
+Protocole : découpe identique 735 / 157 / 158 · extracteurs figés · une architecture de classifieur
+unique — MLP à une couche cachée de 256, entraîné indépendamment derrière chaque représentation.
+Un écart entre deux lignes ne peut provenir que de la représentation. Sélection au F1 macro sur la
+validation ; le test n'intervient jamais dans la sélection.
 
-Le fichier attendu doit contenir cinq champs — `foodId`, `label`, `category`, `foodContentsLabel` et
-`image` — qui sont ceux du schéma d'Edamam, l'autre source proposée. Il faut donc les faire correspondre
-aux champs d'Open Food Facts. Quatre correspondances sont évidentes : le code-barres tient lieu
-d'identifiant, le nom du produit de libellé, les catégories et l'adresse de l'image se transposent
-directement. La cinquième demande un jugement : `foodContentsLabel` désigne chez Edamam la composition
-d'un produit, dont `ingredients_text` est l'équivalent le plus proche. Cette correspondance est isolée
-dans un dictionnaire unique du script, de sorte qu'elle soit lisible et discutable plutôt que dispersée
-dans le code.
+| Représentation | Modalité | Dimensions | F1 macro (validation) |
+|---|---|---|---|
+| TF-IDF | texte | 4 532 | 0,9365 |
+| DINOv2 figé (Vision Transformer) | image | 1 536 | 0,9118 |
+| BERT figé | texte | 768 | 0,9050 |
+| ModernBERT figé | texte | 768 | 0,9035 |
+| VGG16 figé (CNN) | image | 512 | 0,8216 |
 
-Un choix technique mérite d'être signalé. Plutôt qu'une recherche en texte libre, nous filtrons sur la
-catégorie « champagne ». Une recherche plein texte remonterait aussi tout ce qui mentionne le mot sans
-en être : vinaigres, sauces, arômes.
+Constats :
 
-L'extraction produit bien les dix produits demandés. Les cinq champs sont renseignés dans presque tous
-les cas — la composition manque pour deux produits sur dix. Le fichier est utilisable en l'état.
+- Texte : ModernBERT ≈ BERT (écart 0,0015) dans ce régime figé ; TF-IDF les devance tous deux —
+  meilleure performance texte, cohérente avec le vocabulaire discriminant relevé en partie 3.
+- Image : DINOv2 dépasse VGG16 de neuf points, mêmes photographies, mêmes conditions.
+- Le VGG16 du benchmark (0,8216) reproduit exactement le « sans augmentation » de la partie 4 :
+  les deux volets se recoupent.
 
-Ce qu'il contient est plus instructif que le fait qu'il existe. Trois observations se dégagent.
+Analyses complémentaires (pooling, longueur de contexte, similarité entre fiches) :
+`scripts/ablation_modernes.py`, mesures sur validation uniquement.
 
-Les catégories sont hétérogènes. Ces dix produits portent cinq étiquettes différentes : *Champagnes*
-pour cinq d'entre eux, *French Champagnes* pour trois, *fr:Champagnes bruts* pour trois, *fr:Champagnes
-rosés* et *fr:Liquide* pour un chacun. Certaines n'ont pas été traduites et conservent un préfixe de
-langue ; l'une d'elles, *fr:Liquide*, ne dit à peu près rien du produit.
-
-Les libellés sont irréguliers. L'un d'eux se lit « Br МОЁ HANDON MOET & CHANDON CHAMPAGNE IMPERIAL BR »,
-mélangeant caractères cyrilliques et fragments de texte — trace visible de la saisie collaborative et de
-la reconnaissance automatique d'étiquettes.
-
-Enfin, la catégorie source n'est pas toujours juste. Parmi les dix champagnes figure un « MARTINI
-Bellini Peach 8,0 % vol », qui est un cocktail à la pêche.
-
-Cette collecte reste exploratoire — dix produits ne permettent pas de caractériser une base entière —
-mais elle met déjà en évidence un enjeu de qualité et d'homogénéité des métadonnées, qui devra être
-traité en amont du modèle de classification. Établir une correspondance entre la nomenclature de la
-marketplace et celles des sources externes, et composer avec des étiquettes source imparfaites, sont des
-travaux préalables à tout réentraînement.
-
-On retrouve d'ailleurs, sous une autre forme, la difficulté du point de départ : ici comme sur la
-marketplace, les catégories sont déclarées par des contributeurs qui ne suivent pas tous la même règle.
+![F1 par catégorie, sur la validation, pour les six configurations](../reports/fig10_comparaison_par_classe.png)
 
 ---
 
-# 6. Bilan, limites et perspectives
+# 6. Fusion multimodale et évaluation finale
 
-## Ce que l'étude établit
+Principe : concaténation des deux meilleures représentations par modalité — TF-IDF (4 532) et
+DINOv2 normalisé ligne à ligne (1 536) — soit 6 068 caractéristiques, même architecture MLP 256.
 
-La réponse à la question de Linda est positive. Les informations déjà fournies par les vendeurs — une
-description et une photographie — contiennent l'information nécessaire pour retrouver la catégorie d'un
-article.
+Validation : **fusion 0,9366 · TF-IDF seul 0,9365** — quasi-égalité, aucun gain de la
+multimodalité établi sur ce corpus. La règle de sélection fixée d'avance (meilleur F1 macro de
+validation) désigne la fusion.
 
-Cette réponse tient sur deux démonstrations indépendantes. Sans utiliser une seule étiquette, un
-algorithme de regroupement retrouve une partition qui correspond substantiellement aux sept catégories
-du catalogue, avec un accord de 0,51 pour les caractéristiques visuelles issues d'un réseau
-pré-entraîné. Et en supervisé, à partir des seules photographies, un modèle classe correctement 137 des
-158 produits réservés à l'évaluation finale.
+Évaluation finale, jeu de test, une seule ouverture : **F1 macro 0,987 · 156 / 158 produits
+correctement classés**.
 
-Trois résultats méritent d'être retenus au-delà du chiffre principal.
-
-Les représentations visuelles issues d'un réseau pré-entraîné sont ici plus informatives que les
-représentations textuelles, ce qui n'allait pas de soi sur des fiches produit détaillées. Le choix de la
-méthode compte davantage que celui de la modalité : sur les mêmes photographies, un réseau convolutif
-obtient 0,51 quand SIFT reste proche du hasard. Et du côté du texte, un simple comptage de mots se situe
-au niveau de représentations bien plus élaborées, ce qui s'explique par la nature des descriptions — des
-listes de spécifications, où le vocabulaire est très discriminant et la syntaxe presque absente.
-
-Enfin, l'étude a identifié une difficulté que ni un meilleur modèle ni davantage de données ne
-résoudront seuls. Certaines catégories du catalogue regroupent des produits par usage commercial alors
-qu'ils sont visuellement très proches — une couette et un pyjama de bébé, un objet décoratif et un objet
-d'ameublement. Cette ambiguïté apparaît dans les regroupements non supervisés et se retrouve, atténuée,
-dans les erreurs du modèle supervisé.
-
-## Les limites
-
-La plus profonde tient aux catégories elles-mêmes. Elles ont été saisies par les vendeurs, c'est-à-dire
-par ceux dont la mission cherche justement à corriger les erreurs. Nous entraînons et évaluons contre
-une référence imparfaite, sans moyen de savoir, lorsque le modèle contredit une étiquette, lequel des
-deux a raison. Toute performance rapportée ici est donc mesurée contre un étalon bruité.
-
-Le volume constitue la deuxième limite. Mille cinquante produits, dont 735 pour l'entraînement, c'est
-peu. Cela nous a interdit le fine-tuning des réseaux pré-entraînés, qui sont donc employés figés :
-nous comparons des représentations, pas les capacités maximales de ces modèles. Cela explique aussi la
-contre-performance de Word2Vec, entraîné sur ce seul corpus.
-
-Le jeu est par ailleurs parfaitement équilibré, avec exactement 150 produits par catégorie, ce qui
-n'arrive jamais dans un catalogue réel. Les conclusions demanderaient à être revérifiées sur une
-distribution naturelle, où certaines catégories seraient bien plus peuplées que d'autres. Nous n'avons
-enfin traité que le premier niveau de l'arborescence : sept catégories, là où le site en propose
-beaucoup plus une fois qu'on descend dans les branches.
-
-Un mot sur le jeu réservé, par honnêteté de méthode. Le protocole appliqué dans sa version finale est
-correct — sélection sur validation, puis une seule évaluation. Il reste que ce jeu avait été consulté
-lors de la version antérieure et erronée du protocole, décrite en partie 4. Son indépendance historique
-n'est donc pas parfaite, même si le résultat rapporté, lui, découle bien d'une sélection faite sur la
-validation.
-
-## Ce que nous recommandons ensuite
-
-La première étape n'est pas technique. Les confusions identifiées suggèrent que certaines frontières de
-la nomenclature sont ambiguës pour un humain lui-même : un bougeoir décoratif qui sert à table
-appartient-il à la décoration ou aux arts de la table ? Faire trancher ces cas par l'équipe catalogue,
-et faire ré-étiqueter un échantillon des produits sur lesquels le modèle est confiant tout en
-contredisant le vendeur, permettrait de savoir si les erreurs restantes sont celles du modèle ou celles
-du catalogue. Sans cette clarification, on optimiserait contre une cible bruitée.
-
-Vient ensuite le volume. Un corpus plus important rendrait accessible le fine-tuning des réseaux
-pré-entraînés, qui est la piste la plus prometteuse pour dépasser le niveau atteint ici, et permettrait
-d'envisager une classification hiérarchique descendant dans l'arborescence.
-
-Sur le plan technique, deux pistes se dégagent de nos observations. La combinaison du texte et de
-l'image n'a pas été exploitée dans le modèle supervisé, alors que les deux sources ne se trompent
-manifestement pas sur les mêmes produits ; une comparaison complémentaire d'approches combinées est
-disponible dans le dépôt (`benchmark.py`), en marge du périmètre de la mission. Et l'augmentation de
-données mériterait d'être reprise, non pas uniformément, mais avec des transformations choisies par type
-de produit : nos mesures montrent qu'une même augmentation aide certaines catégories et en dégrade
-d'autres.
-
-Enfin, si la marketplace confirme l'ouverture à l'épicerie fine, le travail préalable portera sur la
-qualité et l'homogénéité des métadonnées des sources externes, avant même la question du modèle.
+Les deux erreurs : un lit king size étiqueté *Beauty and Personal Care*, lu *Home Furnishing* —
+étiquette probablement incohérente, limite de l'étalon déclaré par les vendeurs ; un sticker mural
+lu *Baby Care* — l'ambiguïté d'univers domestique observée depuis la partie 3.
 
 ---
 
-# 7. Conduite du projet
+# 7. Collecte de nouveaux produits via une API
 
-## Comment nous avons travaillé
+Objectif : éprouver la collecte d'épicerie fine en vue d'un élargissement de gamme. Source
+retenue : Open Food Facts, sans inscription — script exécutable par un tiers. Correspondances vers
+le schéma Edamam isolées dans un dictionnaire unique. Filtrage par catégorie « champagne » plutôt
+que par texte libre.
 
-Le projet a avancé par questions successives, chacune tranchée par une mesure avant de passer à la
-suivante. Cette discipline a une conséquence pratique : à aucun moment nous n'avons construit une
-brique dont l'utilité n'était pas encore établie. La classification supervisée n'a été entreprise
-qu'une fois démontré, sans étiquettes, que l'information était présente dans les images ; la data
-augmentation n'a été mise en place qu'une fois le modèle de référence mesuré.
+Résultat : 10 produits collectés, cinq champs renseignés — composition manquante pour 2 produits.
 
-Chaque étape a laissé une trace exécutable. Le dépôt s'organise en branches thématiques fusionnées
-après relecture, et l'intégration continue rejoue à chaque modification la vérification de style, les
-tests unitaires, puis la chaîne complète depuis un clone vierge. Ce dernier point n'est pas cosmétique :
-il a révélé un défaut qu'aucune exécution locale n'aurait montré, les tests n'étant pas collectés
-depuis un clone propre alors qu'ils passaient sur notre machine.
+Constats sur le contenu :
 
-## Les délais et où le temps est passé
+- 5 étiquettes de catégorie différentes pour 10 produits, dont des libellés non traduits
+  (*fr:Champagnes bruts*) et un quasi vide de sens (*fr:Liquide*) ;
+- un libellé mêlant caractères cyrilliques et fragments d'étiquette — saisie collaborative ;
+- un cocktail à la pêche parmi les « champagnes ».
 
-L'étude tient en une vingtaine de minutes de calcul sur un ordinateur portable, mais cette durée est
-très inégalement répartie. L'extraction des caractéristiques domine tout le reste : encoder les 1 050
-photographies avec VGG16 et en extraire 482 202 descripteurs SIFT représente à elle seule l'essentiel
-du temps machine. Les projections, les segmentations et l'entraînement des têtes de classification se
-comptent en secondes.
+Limite et enseignement : la qualité et l'homogénéité des métadonnées externes sont un préalable à
+tout réentraînement — les catégories y sont, comme sur la marketplace, déclarées par des
+contributeurs sans règle commune.
 
-Ce déséquilibre a orienté une décision d'architecture : toutes les caractéristiques extraites sont
-mises en cache sur disque. Une seconde exécution ne recalcule ni SIFT ni les réseaux, ce qui a rendu
-possible de reprendre plusieurs fois l'analyse sans repayer le coût d'extraction.
+---
 
-Deux postes ont coûté plus que prévu. La cohabitation de TensorFlow et PyTorch dans un même processus
-a bloqué l'exécution sans lever d'erreur, ce qui est le pire mode de défaillance : le programme paraît
-travailler. Le diagnostic a demandé d'isoler le modèle dans un processus séparé pour constater qu'il
-se chargeait en deux secondes. Et la reprise du protocole d'évaluation, décrite plus bas, a imposé de
-recalculer l'ensemble de la partie supervisée.
+# 8. Limites et recommandations
 
-## Les coûts
+Limites :
 
-Le projet n'a engagé aucun coût d'infrastructure. Tout s'exécute sur un ordinateur portable, sans
-location de calcul graphique, et l'ensemble des modèles employés est librement disponible. Le poste
-le plus lourd est le téléchargement initial des poids pré-entraînés — environ trois gigaoctets —, payé
-une fois.
+- **Étalon bruité** : catégories saisies par les vendeurs, dont l'étude cherche précisément à
+  corriger les erreurs ; aucune performance rapportée n'échappe à cette référence imparfaite.
+- **Volume** : 735 images d'entraînement. Extracteurs conservés figés — choix méthodologique
+  limitant le surapprentissage, non impossibilité de principe ; explique aussi la
+  contre-performance de Word2Vec, appris sur ce seul corpus.
+- **Équilibre artificiel** : 7 × 150 exactement, jamais observé sur un catalogue réel.
+- **Granularité** : premier niveau d'arborescence uniquement.
+- **Indépendance historique du test** : consulté lors de la version erronée du protocole
+  (partie 9) avant la correction ; le résultat final découle, lui, d'une sélection sur validation.
 
-Le coût réel de cette étude est donc en temps de travail, et sa structure mérite d'être notée : la
-part consacrée à écrire du code de modélisation est minoritaire. L'essentiel est allé à comprendre les
-données, à choisir les protocoles de mesure et à vérifier que les chiffres produits voulaient dire ce
-qu'on croyait.
+Recommandations :
 
-Sur une mise en production, la structure des coûts changerait de nature. L'inférence resterait modeste
-— quelques dizaines de millisecondes par article sur un processeur ordinaire — mais le traitement du
-catalogue existant, la construction d'un jeu d'étiquettes fiable et la maintenance de la chaîne
-deviendraient les postes dominants. Ce chiffrage dépasse le périmètre d'une étude de faisabilité et
-demanderait des données que nous n'avons pas : volume réel du catalogue, cadence de publication,
-coût horaire d'une révision manuelle.
+- Faire trancher par l'équipe catalogue les frontières ambiguës ; ré-étiqueter un échantillon des
+  produits où le modèle contredit le vendeur avec confiance.
+- Mettre en service la fusion (partie 6) avec un seuil de confiance : cas incertains en revue
+  humaine.
+- Sur corpus élargi : réglage fin des extracteurs, classification hiérarchique.
+- Data augmentation par type de produit plutôt qu'uniforme.
+- Épicerie fine : traiter la qualité des métadonnées externes avant le modèle.
 
-## Les livrables
+---
 
-Trois livrables répondent aux trois demandes. L'étude de faisabilité produit huit projections, un
-tableau d'accords et les figures associées. La classification supervisée produit un modèle mesuré, sa
-matrice de confusion et la comparaison des stratégies d'augmentation. La collecte produit le fichier
-des dix produits aux cinq champs demandés.
+# 9. Conduite de projet
 
-À cela s'ajoutent le présent rapport, six notebooks exécutés qui portent le détail du raisonnement, et
-un dépôt public qui se rejoue en trois commandes.
+| Élément | Dispositif |
+|---|---|
+| Reproductibilité | graine fixe · versions épinglées · découpe unique (`src/pipeline.py`) |
+| Validation | train / validation / test stratifié · sélection sur validation |
+| Qualité | tests unitaires · CI depuis un clone vierge |
+| Performance | cache disque des caractéristiques extraites |
+| Coût | calcul local · ~20 min · aucun coût d'infrastructure |
 
-## Le contrôle de la performance, et deux erreurs corrigées
+Le poste dominant est le temps de compréhension des données et de choix des protocoles de mesure,
+non l'écriture du code de modélisation. Incidents techniques : annexe C.
 
-Un rapport qui ne montrerait que ce qui a fonctionné ne rendrait pas compte du travail. Deux décisions
-ont été prises puis défaites, et les deux touchaient à la validité des mesures elles-mêmes.
+**Corrections méthodologiques.**
 
-**La normalisation avant projection.** La première version standardisait chaque dimension avant de
-réduire. Sur des représentations creuses de cinq mille dimensions, ce traitement donne à un terme
-apparu trois fois dans tout le corpus le même poids qu'à un terme structurant : l'accord mesuré pour
-TF-IDF tombait à 0,001, au niveau du hasard. Le défaut a été repéré parce que ce chiffre était trop
-mauvais pour être vrai — un score anormalement bas est un signal aussi utile qu'un score anormalement
-bon.
+- Standardisation par dimension avant projection : supprimée — elle ramenait l'accord TF-IDF à
+  0,001, au niveau du hasard.
+- Sélection des stratégies lue sur le jeu de test : corrigée par la sélection sur validation.
 
-**Le protocole de sélection.** Plus grave, les stratégies d'augmentation ont d'abord été comparées
-directement sur le jeu de test, avant que la meilleure ne soit retenue. Aucune étiquette de test
-n'atteignait les poids du modèle, mais les décisions méthodologiques, elles, en dépendaient. Le jeu de
-validation existait et n'était pas utilisé. La correction a inversé la conclusion : la comparaison sur
-le test désignait l'absence d'augmentation, celle sur la validation désigne l'augmentation douce.
-C'est la meilleure justification qu'on puisse donner d'une règle de méthode — elle change la réponse.
+La correction du protocole de sélection a modifié la configuration retenue — la comparaison sur le
+test désignait l'absence d'augmentation, celle sur la validation désigne l'augmentation douce.
+Aucune des deux erreurs n'a été signalée par un test qui échoue : le code fonctionnait, il mesurait
+autre chose que ce qui était visé. Chaque chiffre du rapport est pour cette raison accompagné de
+son protocole, et certains sont rapportés deux fois.
 
-Ces deux corrections ont un point commun. Ni l'une ni l'autre n'a été signalée par un test qui échoue :
-le code fonctionnait, il mesurait simplement autre chose que ce que nous croyions mesurer. C'est la
-raison pour laquelle chaque chiffre du présent rapport est accompagné du protocole qui l'a produit,
-et pourquoi certains sont rapportés deux fois — l'accord avant et après réduction, la performance sur
-la validation puis sur le jeu réservé.
+**Enseignements.**
 
-## Ce que ce projet nous a appris
-
-Trois enseignements dépassent le cas particulier de cette marketplace.
-
-**Le choix de la représentation pèse plus que celui de l'algorithme.** Sur les mêmes photographies,
-deux méthodes d'extraction donnent 0,510 et 0,044. Aucun réglage de classifieur ne comble un tel
-écart.
-
-**Une méthode reconnue peut être inadaptée sans être mauvaise.** SIFT fait exactement ce pour quoi il
-a été conçu ; ce n'est simplement pas la question que nous posions. Savoir *pour quel usage* un outil
-a été construit importe davantage que sa réputation.
-
-**Le protocole de mesure fait partie du résultat.** Les deux erreurs corrigées ci-dessus ne portaient
-pas sur les modèles mais sur la façon de les évaluer, et l'une d'elles changeait la conclusion. Un
-score sans son protocole n'est pas une information.
+- Le choix de la représentation a un effet majeur : 0,044 à 0,510 en accord non supervisé, 0,8216 à
+  0,9118 en F1 supervisé, sur les mêmes photographies.
+- Une méthode reconnue peut être inadaptée sans être mauvaise : SIFT répond à une autre question.
+- Le protocole de mesure fait partie du résultat : un score sans son protocole n'est pas une
+  information.
 
 ---
 
@@ -728,16 +352,18 @@ score sans son protocole n'est pas une information.
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements-encoders.txt
 
-python faisabilite.py        # les sept représentations, projections, K-means, ARI
-python supervise_image.py    # classification supervisée et data augmentation
-python collecte_api.py       # collecte « champagne » et fichier CSV
+python faisabilite.py                   # les sept représentations, projections, K-means, ARI
+python supervise_image.py               # classification supervisée et data augmentation
+python collecte_api.py                  # collecte « champagne » et fichier CSV
+python scripts/comparer_modernes.py     # le benchmark des représentations et la fusion
 ```
 
 Le socle seul (`requirements.txt`) suffit pour l'exploration des données et les modèles classiques ;
 `requirements-encoders.txt` ajoute les réseaux pré-entraînés, soit environ 3 Go de poids au premier
 lancement. Les versions sont épinglées, la graine aléatoire est fixe, et la découpe des données est
 définie dans un module unique (`src/pipeline.py`) appelé par tous les scripts. Les caractéristiques
-extraites sont mises en cache sur disque : une seconde exécution ne recalcule ni SIFT ni VGG16.
+extraites sont mises en cache sur disque : une seconde exécution ne recalcule ni SIFT ni les
+réseaux.
 
 ## B. Figures et fichiers produits
 
@@ -748,30 +374,31 @@ extraites sont mises en cache sur disque : une seconde exécution ne recalcule n
 | `reports/fig5_projections.png` | Les sept projections en deux dimensions |
 | `reports/fig6_clusters.png` | VGG16 : catégories réelles et groupes trouvés |
 | `reports/fig7_ari.png` | L'accord entre groupes et catégories, par représentation |
-| `reports/fig8_confusion_image.png` | Matrice de confusion du modèle supervisé |
+| `reports/fig8_confusion_image.png` | Matrice de confusion du modèle supervisé image |
 | `reports/fig9_augmentation_par_classe.png` | L'effet de l'augmentation, catégorie par catégorie |
+| `reports/fig10_comparaison_par_classe.png` | F1 par catégorie des six configurations du benchmark |
 | `reports/faisabilite.csv` | Dimensions et accords des sept représentations |
 | `reports/supervise_image_validation.csv` | Comparaison des stratégies d'augmentation |
-| `reports/supervise_image_test.csv` | Résultat final du modèle retenu |
+| `reports/supervise_image_test.csv` | Résultat final du modèle image retenu |
+| `reports/comparaison_validation.csv` | Le benchmark des représentations, sur la validation |
+| `reports/comparaison_test.csv` | L'évaluation finale de la fusion, sur le jeu réservé |
 | `reports/produits_champagne.csv` | Les dix produits collectés via l'API |
 
 ## C. Notes techniques
 
 **Universal Sentence Encoder et la cohabitation TensorFlow / PyTorch.** USE est distribué pour
-TensorFlow, quand le reste de notre chaîne repose sur PyTorch. Les deux bibliothèques s'installent sans
-conflit de versions, mais chargées dans un même processus elles se sont bloquées mutuellement sur notre
-machine : la première exécution est restée figée sans lever d'erreur. Isolé dans son propre processus,
-le modèle se charge en deux secondes. L'encodage USE est donc délégué à un sous-processus dédié, ce qui
-permet d'employer le modèle de référence lui-même plutôt qu'une variante approchante. Par ailleurs,
-`tensorflow_hub` importe encore `pkg_resources`, retiré de `setuptools` à partir de la version 81 : la
-borne haute présente dans les dépendances est là pour cette seule raison.
+TensorFlow, quand le reste de la chaîne repose sur PyTorch. Chargées dans un même processus, les
+deux bibliothèques se sont bloquées mutuellement sans lever d'erreur ; isolé dans son propre
+processus, le modèle se charge en deux secondes. L'encodage USE est donc délégué à un sous-processus
+dédié, ce qui permet d'employer le modèle de référence lui-même. Par ailleurs, `tensorflow_hub`
+importe encore `pkg_resources`, retiré de `setuptools` à partir de la version 81 : la borne haute
+des dépendances est là pour cette seule raison.
 
 **Point d'entrée de l'API Open Food Facts.** L'ancien point d'entrée `cgi/search.pl`, déprécié, a
-renvoyé une erreur de service temporairement indisponible lors du premier essai. Le script utilise le
-point d'entrée v2, maintenu, et réessaie avec une attente croissante plutôt que d'échouer sur un
-incident passager.
+renvoyé une erreur de service lors du premier essai. Le script utilise le point d'entrée v2,
+maintenu, et réessaie avec une attente croissante.
 
-**Normalisation avant projection.** Chaque produit est ramené à une longueur unitaire avant l'analyse en
-composantes principales, ce qui rend la distance euclidienne équivalente à la distance cosinus. Une
-première version standardisait chaque dimension : sur des représentations creuses de 5 000 dimensions,
-ce traitement amplifiait les termes rares au point de ramener l'accord de TF-IDF au niveau du hasard.
+**Normalisation avant projection.** Chaque produit est ramené à une longueur unitaire avant l'ACP,
+ce qui rend la distance euclidienne équivalente à la distance cosinus. La standardisation par
+dimension, testée d'abord, amplifiait les termes rares au point de ramener l'accord TF-IDF au
+niveau du hasard.
