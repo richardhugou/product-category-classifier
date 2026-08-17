@@ -1,5 +1,5 @@
 Modèle,F1 macro,Accuracy,F1 classe min,Entraînement (s),Inférence (ms/article),Empreinte (Mo),"Seuil 0,90"
 Fusion texte + image,0.9744,0.9747,0.9545,1.84,35.75,365.4,oui
 TF-IDF + MLP,0.9427,0.943,0.8696,0.5,0.06,14.3,oui
-DINOv2 figé — image seule,0.9366,0.9367,0.8636,0.16,35.7,346.3,oui
+DINOv2 figé : image seule,0.9366,0.9367,0.8636,0.16,35.7,346.3,oui
 TF-IDF + XGBoost,0.9234,0.9241,0.8372,4.62,0.08,2.6,oui

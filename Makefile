@@ -17,7 +17,7 @@ figures:                     ## regénère les quatre figures
 demo:                        ## comparaison texte / image / fusion (travail complémentaire)
 	streamlit run app.py
 
-demo-mission:                ## le modèle de la partie 4, seul — celui de la soutenance
+demo-mission:                ## le modèle de la partie 4, seul · celui de la soutenance
 	streamlit run demo.py
 
 modele:                      ## sérialise le modèle de la partie 4 et vérifie qu'il reproduit 0,867
