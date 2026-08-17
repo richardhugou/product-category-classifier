@@ -11,9 +11,9 @@ permettent-elles de retrouver automatiquement la catégorie d'un article ?
 
 ## Le problème
 
-Sur une marketplace, chaque vendeur choisit lui-même la catégorie de son article au moment de la mise
-en ligne. Sur un petit catalogue, cela tient. À mesure que le volume augmente, deux vendeurs classent
-des produits semblables à deux endroits différents, et un article mal rangé devient introuvable :
+Sur une marketplace, chaque vendeur choisit lui-même la catégorie de son article au moment de la
+mise en ligne. À mesure que le volume augmente, deux vendeurs classent des produits semblables à
+deux endroits différents, et un article mal rangé devient introuvable :
 l'acheteur qui filtre par catégorie ne le voit pas, et le vendeur n'apprend jamais pourquoi il ne
 vend pas.
 
@@ -22,9 +22,9 @@ photographie par article.
 
 ## Ce que l'étude établit
 
-**Les catégories sont déjà présentes dans les données.** Sans montrer une seule étiquette, on projette
-les produits en deux dimensions, on laisse un K-means former sept groupes, et on compare ces groupes
-aux vraies catégories avec l'indice de Rand ajusté.
+**Les catégories sont déjà présentes dans les données.** Sans montrer une seule étiquette, la chaîne
+projette les produits en deux dimensions, un K-means forme sept groupes, et l'indice de Rand ajusté
+mesure leur accord avec les vraies catégories.
 
 | Représentation | Source | Dimensions | Accord (projection) | Accord (espace complet) |
 |---|---|---|---|---|
@@ -39,9 +39,9 @@ aux vraies catégories avec l'indice de Rand ajusté.
 
 ![Les sept projections](reports/fig5_projections.png)
 
-Trois lectures. Sur les **mêmes photographies**, un réseau convolutif atteint 0,510 quand SIFT reste
+Sur les **mêmes photographies**, un réseau convolutif atteint 0,510 quand SIFT reste
 proche du hasard : SIFT décrit des motifs locaux, pas ce qu'est l'objet. Un **comptage simple de mots**
-fait pratiquement jeu égal avec BERT — sur des fiches de spécifications, le vocabulaire est très
+fait pratiquement jeu égal avec BERT : sur des fiches de spécifications, le vocabulaire est très
 discriminant et la syntaxe presque absente. Et VGG16 est la seule représentation dont l'accord est
 **meilleur avant réduction qu'après** : sa structure ne doit rien à t-SNE.
 
@@ -54,7 +54,7 @@ macro de 0,867, avec un VGG16 figé et 735 images d'entraînement.
 ![Matrice de confusion](reports/fig8_confusion_image.png)
 
 La data augmentation a été comparée sur le jeu de validation avant tout accès au jeu réservé. Elle
-n'apporte pas d'amélioration nette — six millièmes de point, moins d'un produit sur 157 — et une
+n'apporte pas d'amélioration nette : six millièmes de point, moins d'un produit sur 157. Une
 augmentation forte et répétée dégrade la performance. Elle n'est pas pour autant sans effet : elle
 déplace les erreurs d'une catégorie à l'autre.
 
@@ -85,7 +85,7 @@ Autres cibles : `make test`, `make lint`, `make notebooks`, `make help`.
 
 ```
 ├── src/
-│   ├── pipeline.py          chargement et découpe — source unique, appelée partout
+│   ├── pipeline.py          chargement et découpe · source unique, appelée partout
 │   ├── pretraitement.py     nettoyage du texte, harmonisation des images
 │   ├── representations.py   les 7 représentations imposées par la mission
 │   ├── faisabilite.py       projection ACP + t-SNE, K-means, indice de Rand ajusté
@@ -95,9 +95,9 @@ Autres cibles : `make test`, `make lint`, `make notebooks`, `make help`.
 │   ├── fusion.py            concaténation après normalisation L2
 │   ├── evaluate.py          métriques
 │   └── figures.py           figures d'exploration
-├── faisabilite.py           étude de faisabilité — première demande
-├── supervise_image.py       classification supervisée — deuxième demande
-├── collecte_api.py          collecte via API — troisième demande
+├── faisabilite.py           étude de faisabilité · première demande
+├── supervise_image.py       classification supervisée · deuxième demande
+├── collecte_api.py          collecte via API · troisième demande
 ├── notebooks/               les notebooks, exécutés, dans l'ordre de la mission
 │   ├── 01_eda_etl · 02_visualisation · 03_representations
 │   ├── 04_faisabilite · 05_supervise_image · 06_collecte_api
@@ -112,13 +112,13 @@ Tous les scripts l'appellent, ce qui garantit que les chiffres se comparent entr
 
 ## Au-delà de la mission
 
-Le dépôt prolonge l'étude par un benchmark de représentations — extracteurs récents contre
-références, texte et image, à découpe et classifieur constants — puis par la fusion des deux
-modalités : `scripts/comparer_modernes.py`, repris dans le rapport, parties 5 et 6. Sélection sur la
-validation, une seule ouverture du jeu réservé : F1 macro 0,987, 156 produits sur 158.
+Le dépôt prolonge l'étude par un benchmark de représentations, texte et image, à découpe et
+classifieur constants, puis par la fusion des deux modalités : `scripts/comparer_modernes.py`,
+repris dans le rapport, parties 5 et 6. Sélection sur la validation, une seule ouverture du jeu
+réservé : F1 macro 0,987, 156 produits sur 158.
 
-Les explorations antérieures restent dans le dépôt — `benchmark.py`, `optimize.py`, l'application de
-démonstration `app.py`, les carnets `notebooks/complementaires/` : protocoles différents, chiffres
+Les explorations antérieures restent dans le dépôt, `benchmark.py`, `optimize.py`, l'application de
+démonstration `app.py` et les carnets `notebooks/complementaires/` : protocoles différents, chiffres
 non comparables à ceux du rapport.
 
 ## Organisation du dépôt
@@ -126,7 +126,7 @@ non comparables à ceux du rapport.
 `main` porte les versions publiées, `develop` intègre, et chaque lot de travail vit sur sa propre
 branche avant d'être fusionné. L'intégration continue tourne sur `main`, `develop` et toute branche
 `feature/**` : lint, format, tests, puis un rejeu de la chaîne depuis un clone propre. Les réseaux
-pré-entraînés en sont exclus — plusieurs gigaoctets de poids par exécution seraient disproportionnés.
+pré-entraînés en sont exclus : plusieurs gigaoctets de poids par exécution seraient disproportionnés.
 
 ## Licence
 

@@ -2,7 +2,7 @@
 
 **À partir des descriptions textuelles et des photographies de produits**
 
-Richard Hugou — août 2026
+Richard Hugou · août 2026
 
 ---
 
@@ -31,7 +31,7 @@ pour ce cadre.
 
 # 2. Données
 
-**Exemple de référence — V9 METAL STRAP Analog Watch.** Conservé tout au long de l'étude.
+**Exemple de référence : V9 METAL STRAP Analog Watch.** Conservé tout au long de l'étude.
 
 | Champ | Contenu |
 |---|---|
@@ -40,8 +40,8 @@ pour ce cadre.
 | `product_category_tree` | `["Watches >> Wrist Watches >> V9 Wrist Watches >> ..."]` |
 | `image` | photographie de 1 152 × 1 816 pixels |
 
-Corpus : 1 050 articles, 7 catégories de 150 exactement — *Baby Care*, *Beauty and Personal Care*,
-*Computers*, *Home Decor & Festive Needs*, *Home Furnishing*, *Kitchen & Dining*, *Watches*. La
+Corpus : 1 050 articles, 7 catégories de 150 exactement (*Baby Care*, *Beauty and Personal Care*,
+*Computers*, *Home Decor & Festive Needs*, *Home Furnishing*, *Kitchen & Dining*, *Watches*). La
 cible est le premier niveau de l'arborescence `product_category_tree`. Elle est déclarée par les
 vendeurs : la référence d'évaluation est donc elle-même faillible (repris en partie 8).
 
@@ -55,7 +55,7 @@ Constats sur les entrées :
 
 ![Équilibre des classes et distribution des longueurs de description](../reports/fig4_donnees.png)
 
-**Champ `brand` exclu** : 32 % de valeurs manquantes, absence fortement corrélée à la catégorie —
+**Champ `brand` exclu** : 32 % de valeurs manquantes, absence fortement corrélée à la catégorie.
 95 % des 338 absences se concentrent sur trois catégories.
 
 | Catégorie | Marque absente |
@@ -103,7 +103,7 @@ classement ; `metal` (0,272) et `strap` (0,246) dominent.
 ![La chaîne de transformation, sur un article réel](../reports/fig3_transformations.png)
 
 **Projection.** ACP à 50 composantes puis t-SNE. Chaque produit est préalablement ramené à une
-longueur unitaire — la standardisation par dimension, testée d'abord, amplifiait les termes rares
+longueur unitaire : la standardisation par dimension, testée d'abord, amplifiait les termes rares
 au point de ramener l'accord TF-IDF à 0,001 (partie 9). Lecture t-SNE : proximités significatives,
 échelle des axes non.
 
@@ -114,7 +114,7 @@ nuage homogène pour SIFT.
 
 **Mesure.** Catégories masquées · K-means à 7 groupes · indice de Rand ajusté (1 : partitions
 identiques ; 0 : accord équivalent au hasard). Règle de lecture : **un indice de 0,51 ne signifie
-pas que 51 % des produits sont correctement catégorisés** — c'est une correspondance entre deux
+pas que 51 % des produits sont correctement catégorisés**, c'est une correspondance entre deux
 partitions, pas une proportion. Mesure rapportée deux fois : sur la projection et sur la
 représentation complète, t-SNE déformant.
 
@@ -138,7 +138,7 @@ Constats :
   celle posée.
 - VGG16 est la seule représentation meilleure avant réduction qu'après : la séparation existe dans
   l'espace d'origine.
-- Côté texte, USE se détache (0,440) ; le comptage simple fait jeu égal avec BERT — vocabulaire
+- Côté texte, USE se détache (0,440) ; le comptage simple fait jeu égal avec BERT : vocabulaire
   discriminant, syntaxe quasi absente. Word2Vec, appris sur 1 050 descriptions, arrive dernier.
   Bigrammes : +0,010 en projection, −0,043 en espace complet.
 
@@ -158,7 +158,7 @@ source la plus prometteuse.
 
 # 4. Classification supervisée des images
 
-Protocole : découpe stratifiée figée des 1 050 produits — 735 entraînement · 157 validation · 158
+Protocole : découpe stratifiée figée des 1 050 produits en 735 entraînement · 157 validation · 158
 test. Toute décision est prise sur la validation ; le jeu de test n'est ouvert qu'une fois, pour le
 seul modèle retenu. Cette règle corrige une erreur commise en cours d'étude : une première
 comparaison des stratégies avait été lue sur le test (partie 9).
@@ -179,7 +179,7 @@ de catalogue :
 | Sans augmentation | 735 | 0,822 |
 | Augmentation forte ×8 | 6 615 | 0,815 |
 
-Écart maximal : 0,006 point de F1 macro — insuffisant, sur cet échantillon de validation, pour
+Écart maximal : 0,006 point de F1 macro. Insuffisant, sur cet échantillon de validation, pour
 conclure à une amélioration nette. La lecture par catégorie est plus informative : l'augmentation
 déplace les erreurs.
 
@@ -200,7 +200,7 @@ stratégie. Configuration retenue selon la règle fixée d'avance : augmentation
 non établi.
 
 **Évaluation finale.** Jeu de test, une seule ouverture : **137 / 158 produits correctement
-classés · exactitude 86,7 % · F1 macro 0,867** — extracteur figé, sans texte.
+classés · exactitude 86,7 % · F1 macro 0,867**. Extracteur figé, sans texte.
 
 ![Matrice de confusion sur le jeu réservé](../reports/fig8_confusion_image.png)
 
@@ -216,7 +216,7 @@ extracteurs pré-entraînés plus récents produisent-ils de meilleures représe
 corpus ? Et que vaut la combinaison des deux modalités ?
 
 Protocole : découpe identique 735 / 157 / 158 · extracteurs figés · une architecture de classifieur
-unique — MLP à une couche cachée de 256, entraîné indépendamment derrière chaque représentation.
+unique, MLP à une couche cachée de 256, entraîné indépendamment derrière chaque représentation.
 Un écart entre deux lignes ne peut provenir que de la représentation. Sélection au F1 macro sur la
 validation ; le test n'intervient jamais dans la sélection.
 
@@ -230,7 +230,7 @@ validation ; le test n'intervient jamais dans la sélection.
 
 Constats :
 
-- Texte : ModernBERT ≈ BERT (écart 0,0015) dans ce régime figé ; TF-IDF les devance tous deux —
+- Texte : ModernBERT ≈ BERT (écart 0,0015) dans ce régime figé ; TF-IDF les devance tous deux,
   meilleure performance texte, cohérente avec le vocabulaire discriminant relevé en partie 3.
 - Image : DINOv2 dépasse VGG16 de neuf points, mêmes photographies, mêmes conditions.
 - Le VGG16 du benchmark (0,8216) reproduit exactement le « sans augmentation » de la partie 4 :
@@ -245,40 +245,40 @@ Analyses complémentaires (pooling, longueur de contexte, similarité entre fich
 
 # 6. Fusion multimodale et évaluation finale
 
-Principe : concaténation des deux meilleures représentations par modalité — TF-IDF (4 532) et
-DINOv2 normalisé ligne à ligne (1 536) — soit 6 068 caractéristiques, même architecture MLP 256.
+Principe : concaténation des deux meilleures représentations par modalité, TF-IDF (4 532) et
+DINOv2 normalisé ligne à ligne (1 536), soit 6 068 caractéristiques, même architecture MLP 256.
 
-Validation : **fusion 0,9366 · TF-IDF seul 0,9365** — quasi-égalité, aucun gain de la
+Validation : **fusion 0,9366 · TF-IDF seul 0,9365**. Quasi-égalité : aucun gain de la
 multimodalité établi sur ce corpus. La règle de sélection fixée d'avance (meilleur F1 macro de
 validation) désigne la fusion.
 
 Évaluation finale, jeu de test, une seule ouverture : **F1 macro 0,987 · 156 / 158 produits
 correctement classés**.
 
-Les deux erreurs : un lit king size étiqueté *Beauty and Personal Care*, lu *Home Furnishing* —
+Les deux erreurs : un lit king size étiqueté *Beauty and Personal Care*, lu *Home Furnishing*,
 étiquette probablement incohérente, limite de l'étalon déclaré par les vendeurs ; un sticker mural
-lu *Baby Care* — l'ambiguïté d'univers domestique observée depuis la partie 3.
+lu *Baby Care*, l'ambiguïté d'univers domestique observée depuis la partie 3.
 
 ---
 
 # 7. Collecte de nouveaux produits via une API
 
 Objectif : éprouver la collecte d'épicerie fine en vue d'un élargissement de gamme. Source
-retenue : Open Food Facts, sans inscription — script exécutable par un tiers. Correspondances vers
+retenue : Open Food Facts, sans inscription ; script exécutable par un tiers. Correspondances vers
 le schéma Edamam isolées dans un dictionnaire unique. Filtrage par catégorie « champagne » plutôt
 que par texte libre.
 
-Résultat : 10 produits collectés, cinq champs renseignés — composition manquante pour 2 produits.
+Résultat : 10 produits collectés, cinq champs renseignés ; composition manquante pour 2 produits.
 
 Constats sur le contenu :
 
 - 5 étiquettes de catégorie différentes pour 10 produits, dont des libellés non traduits
   (*fr:Champagnes bruts*) et un quasi vide de sens (*fr:Liquide*) ;
-- un libellé mêlant caractères cyrilliques et fragments d'étiquette — saisie collaborative ;
+- un libellé mêlant caractères cyrilliques et fragments d'étiquette : saisie collaborative ;
 - un cocktail à la pêche parmi les « champagnes ».
 
 Limite et enseignement : la qualité et l'homogénéité des métadonnées externes sont un préalable à
-tout réentraînement — les catégories y sont, comme sur la marketplace, déclarées par des
+tout réentraînement. Les catégories y sont, comme sur la marketplace, déclarées par des
 contributeurs sans règle commune.
 
 ---
@@ -289,7 +289,7 @@ Limites :
 
 - **Étalon bruité** : catégories saisies par les vendeurs, dont l'étude cherche précisément à
   corriger les erreurs ; aucune performance rapportée n'échappe à cette référence imparfaite.
-- **Volume** : 735 images d'entraînement. Extracteurs conservés figés — choix méthodologique
+- **Volume** : 735 images d'entraînement. Extracteurs conservés figés : choix méthodologique
   limitant le surapprentissage, non impossibilité de principe ; explique aussi la
   contre-performance de Word2Vec, appris sur ce seul corpus.
 - **Équilibre artificiel** : 7 × 150 exactement, jamais observé sur un catalogue réel.
@@ -324,11 +324,11 @@ non l'écriture du code de modélisation. Incidents techniques : annexe C.
 
 **Corrections méthodologiques.**
 
-- Standardisation par dimension avant projection : supprimée — elle ramenait l'accord TF-IDF à
+- Standardisation par dimension avant projection : supprimée. Elle ramenait l'accord TF-IDF à
   0,001, au niveau du hasard.
 - Sélection des stratégies lue sur le jeu de test : corrigée par la sélection sur validation.
 
-La correction du protocole de sélection a modifié la configuration retenue — la comparaison sur le
+La correction du protocole de sélection a modifié la configuration retenue : la comparaison sur le
 test désignait l'absence d'augmentation, celle sur la validation désigne l'augmentation douce.
 Aucune des deux erreurs n'a été signalée par un test qui échoue : le code fonctionnait, il mesurait
 autre chose que ce qui était visé. Chaque chiffre du rapport est pour cette raison accompagné de

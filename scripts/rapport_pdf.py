@@ -111,7 +111,7 @@ def construire_html(source: Path) -> str:
 <div class="couverture">
   <h1>Étude de faisabilité d'un moteur de classification automatique d'articles</h1>
   <div class="sous">À partir des descriptions textuelles et des photographies de produits</div>
-  <div class="auteur"><strong>Richard Hugou</strong> — Data Scientist junior</div>
+  <div class="auteur"><strong>Richard Hugou</strong> · Data Scientist junior</div>
   <div class="auteur">août 2026</div>
   <div class="liens">
     Projet technique :
@@ -122,7 +122,7 @@ def construire_html(source: Path) -> str:
 """
     return (
         "<!doctype html><html lang='fr'><head><meta charset='utf-8'>"
-        f"<title>Rapport — Richard Hugou</title><style>{STYLE}</style></head>"
+        f"<title>Rapport · Richard Hugou</title><style>{STYLE}</style></head>"
         f"<body>{couverture}{contenu}</body></html>"
     )
 
