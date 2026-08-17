@@ -358,15 +358,31 @@ Le modèle automatise donc environ **85 %** du volume et transfère le reste en 
 | charge de revue humaine | dimensionnement avant mise en service |
 | licence des images d'étude | constitution d'un corpus propre à l'entreprise |
 
-### Scénarios
+### Estimation simple
 
-| Scénario | Périmètre | Charge |
+Hypothèses : catalogue de 100 000 articles ; revue manuelle de 30 s/article ; taux d'automatisation
+observé de 85,4 % ; temps d'inférence mesuré de 58,22 ms/article.
+
+| Indicateur | Sans automatisation | Avec le modèle |
 |---|---|---|
-| Démonstrateur | état actuel | réalisé |
-| Mise en service | interface authentifiée, seuil, logs | à estimer |
-| Industrialisation | monitoring, réentraînement, revue | à estimer |
+| Articles traités | 100 000 | 100 000 |
+| Catégories automatisées | 0 | 85 400 |
+| Articles en revue | 100 000 | 14 600 |
+| Charge de revue à 30 s/article | ≈ 104 j-personne | ≈ 15 j-personne |
+| Calcul modèle | aucun | ≈ 1,62 h |
 
-Aucun chiffrage de charge n'a été produit dans le cadre du projet.
+Ordre de grandeur : environ 89 jours-personne de revue évités pour 100 000 articles.
+
+### Mise en œuvre
+
+Hypothèse : 1 Data Scientist + 1 profil MLOps à 600 €/jour/personne.
+
+| Scénario | Charge | Estimation |
+|---|---|---|
+| Mise en service minimale | 2 × 5 jours | 6 000 € |
+| Industrialisation | 2 × 10 jours | 12 000 € |
+
+Estimations indicatives, hors infrastructure et maintenance.
 
 ---
 
