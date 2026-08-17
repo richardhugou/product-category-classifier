@@ -159,11 +159,24 @@ supplémentaire.
 
 ## 3.2 Comparatif des approches
 
+**Mesures employées.**
+
+| Question | Mesure | Pourquoi celle-ci |
+|---|---|---|
+| Les catégories existent-elles dans les données ? | indice de Rand ajusté entre groupes formés et catégories réelles | compare deux partitions sans supposer que les groupes portent les bons noms |
+| À quoi ressemblent les données ? | ACP à 50 composantes puis t-SNE | rend visible en deux dimensions un espace à plusieurs milliers ; sert à voir, jamais à décider |
+| Quelle représentation classe le mieux ? | F1 macro | moyenne à poids égal sur les 7 catégories : une catégorie faible n'est pas masquée |
+| Où sont les erreurs ? | matrice de confusion et F1 par catégorie | une moyenne ne dit pas quelles catégories se confondent |
+
 **L'information est-elle présente dans les données existantes ?** Catégories masquées, huit
 représentations projetées, les sept imposées par le brief et une variante en bigrammes,
 partitionnement en sept groupes, accord mesuré par l'indice de Rand ajusté (annexe B).
 
 VGG16 **0,510** · USE 0,440 · TF-IDF 0,325 · BERT 0,316 · Word2Vec 0,300 · SIFT 0,044.
+
+**Projection.** ACP à 50 composantes, puis t-SNE. Chaque article est préalablement ramené à une
+longueur unitaire, ce qui rend la distance euclidienne équivalente à la distance cosinus. Sur une
+projection t-SNE, seules les proximités entre points ont un sens, l'échelle des axes n'en a pas.
 
 ![Les huit projections, couleur : catégorie réelle](../reports/fig5_projections.png)
 
@@ -391,7 +404,9 @@ intégration continue déclenchée sur les trois niveaux. Un correctif urgent a 
 | Comparaison des stratégies d'augmentation lue sur le jeu de test | sélection reportée sur la validation | configuration retenue modifiée |
 | Standardisation par dimension avant projection, accord TF-IDF tombé à 0,001 | normalisation ligne à ligne | accord rétabli à 0,325 |
 
-Chaque chiffre du rapport est pour cette raison accompagné de son protocole.
+Le jeu de test a donc été consulté avant la correction du protocole. Le résultat final procède, lui,
+d'une sélection faite sur la validation. Chaque chiffre du rapport est pour cette raison accompagné de
+son protocole.
 
 **Suivi en production, proposé** : taux de refus des propositions par les vendeurs, part du volume
 au-dessus du seuil, distribution des confiances maximales pour la dérive des entrées, volume et délai
@@ -442,6 +457,7 @@ python collecte_api.py                  # collecte « champagne » et fichier CS
 python scripts/comparer_modernes.py     # le comparatif des représentations et la fusion
 python scripts/seuil_confiance.py       # seuil de décision et indicateurs d'automatisation
 python scripts/cout_inference.py        # coût d'inférence, poste par poste
+python scripts/rapport_classification.py # précision et rappel par catégorie
 python scripts/schemas.py               # les deux schémas de flux et d'architecture
 ```
 
@@ -452,6 +468,24 @@ définie dans un module unique (`src/pipeline.py`) appelé par tous les scripts.
 extraites sont mises en cache : une seconde exécution ne recalcule ni SIFT ni les réseaux.
 
 ## B. Tableaux détaillés
+
+**Précision, rappel et F1 par catégorie.** Modèle retenu, jeu réservé, unique ouverture. Détail de la
+même évaluation que la partie 3.4, non une seconde mesure.
+
+| Catégorie | Précision | Rappel | F1 | Articles |
+|---|---|---|---|---|
+| Baby Care | 0,957 | 1,000 | 0,978 | 22 |
+| Beauty and Personal Care | 1,000 | 0,955 | 0,977 | 22 |
+| Computers | 1,000 | 1,000 | 1,000 | 23 |
+| Home Decor & Festive Needs | 1,000 | 0,957 | 0,978 | 23 |
+| Home Furnishing | 0,958 | 1,000 | 0,979 | 23 |
+| Kitchen & Dining | 1,000 | 1,000 | 1,000 | 22 |
+| Watches | 1,000 | 1,000 | 1,000 | 23 |
+| **Moyenne macro** | **0,988** | **0,987** | **0,987** | **158** |
+
+Les deux erreurs se lisent en creux : un article de *Beauty and Personal Care* manqué, d'où un rappel
+de 0,955 sur cette catégorie et une précision de 0,958 sur *Home Furnishing* qui l'a absorbé ; un
+article de *Home Decor & Festive Needs* manqué, absorbé par *Baby Care*.
 
 **Accord entre groupes non supervisés et catégories réelles.** Mesure rapportée deux fois, avant et
 après réduction, la réduction étant déformante.
@@ -498,6 +532,7 @@ existant déjà dans l'espace d'origine.
 | `reports/supervise_image_validation.csv` | Comparaison des stratégies d'augmentation |
 | `reports/comparaison_validation.csv` | Le comparatif des représentations, sur la validation |
 | `reports/comparaison_test.csv` | L'évaluation finale de la fusion, sur le jeu réservé |
+| `reports/classification_test.csv` | Précision, rappel et F1 par catégorie, modèle retenu |
 | `reports/seuil_confiance.csv` | Automatisation et justesse par seuil, validation et test |
 | `reports/cout_inference.json` | Coût d'inférence par poste et par volume |
 | `reports/produits_champagne.csv` | Les dix produits collectés via l'interface externe |

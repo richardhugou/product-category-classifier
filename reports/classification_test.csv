@@ -1,0 +1,10 @@
+Catégorie,Précision,Rappel,F1,Articles
+Baby Care,0.957,1.0,0.978,22
+Beauty and Personal Care,1.0,0.955,0.977,22
+Computers,1.0,1.0,1.0,23
+Home Decor & Festive Needs,1.0,0.957,0.978,23
+Home Furnishing,0.958,1.0,0.979,23
+Kitchen & Dining,1.0,1.0,1.0,22
+Watches,1.0,1.0,1.0,23
+macro avg,0.988,0.987,0.987,158
+weighted avg,0.988,0.987,0.987,158
