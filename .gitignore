@@ -11,3 +11,7 @@ models/
 # volumineux, régénérables : 351 Mo de photographies, 13 Mo de caractéristiques
 data/Flipkart
 data/features
+
+# outillage local et traces d'exécution : ne doivent jamais partir dans le dépôt public
+.claude/
+reports/*.log
