@@ -13,5 +13,4 @@ data/Flipkart
 data/features
 
 # outillage local et traces d'exécution : ne doivent jamais partir dans le dépôt public
-.claude/
 reports/*.log
