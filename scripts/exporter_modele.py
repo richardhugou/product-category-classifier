@@ -1,4 +1,4 @@
-"""Sérialise le modèle de la partie 4 : celui, et pas un autre.
+"""Sérialise le modèle image de la partie 3.3 : celui, et pas un autre.
 
 Ce script ne choisit rien. La stratégie a été retenue sur la validation par
 `supervise_image.py` ; on relit ce choix dans le rapport produit, on rejoue la

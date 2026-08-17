@@ -109,9 +109,9 @@ def construire_html(source: Path) -> str:
 
     couverture = """
 <div class="couverture">
-  <h1>Étude de faisabilité d'un moteur de classification automatique d'articles</h1>
-  <div class="sous">À partir des descriptions textuelles et des photographies de produits</div>
-  <div class="auteur"><strong>Richard Hugou</strong> · Data Scientist junior</div>
+  <h1>Automatisation de la catégorisation d'articles sur une place de marché</h1>
+  <div class="sous">Rapport de conduite de projet AI Engineering</div>
+  <div class="auteur"><strong>Richard Hugou</strong> · Data Scientist &amp; AI Engineer</div>
   <div class="auteur">août 2026</div>
   <div class="liens">
     Projet technique :

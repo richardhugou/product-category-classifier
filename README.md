@@ -37,7 +37,7 @@ mesure leur accord avec les vraies catégories.
 | Word2Vec | texte | 300 | 0,300 | 0,207 |
 | SIFT | image | 256 | 0,044 | 0,056 |
 
-![Les sept projections](reports/fig5_projections.png)
+![Les huit projections](reports/fig5_projections.png)
 
 Sur les **mêmes photographies**, un réseau convolutif atteint 0,510 quand SIFT reste
 proche du hasard : SIFT décrit des motifs locaux, pas ce qu'est l'objet. Un **comptage simple de mots**
@@ -68,7 +68,7 @@ regroupe par matière et mise en scène ; la nomenclature regroupe par usage com
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements-encoders.txt
 
-python faisabilite.py                  # 7 représentations, projections 2D, K-means, ARI
+python faisabilite.py                  # 8 représentations, projections 2D, K-means, ARI
 python supervise_image.py              # classification supervisée et data augmentation
 python collecte_api.py                 # collecte « champagne » via Open Food Facts
 python scripts/comparer_modernes.py    # benchmark des représentations et fusion
@@ -114,7 +114,7 @@ Tous les scripts l'appellent, ce qui garantit que les chiffres se comparent entr
 
 Le dépôt prolonge l'étude par un benchmark de représentations, texte et image, à découpe et
 classifieur constants, puis par la fusion des deux modalités : `scripts/comparer_modernes.py`,
-repris dans le rapport, parties 5 et 6. Sélection sur la validation, une seule ouverture du jeu
+repris dans le rapport, partie 3. Sélection sur la validation, une seule ouverture du jeu
 réservé : F1 macro 0,987, 156 produits sur 158.
 
 Les explorations antérieures restent dans le dépôt, `benchmark.py`, `optimize.py`, l'application de

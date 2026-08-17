@@ -1,4 +1,4 @@
-"""Démonstration : le modèle de la partie 4, et lui seul.
+"""Démonstration : le modèle image de la partie 3.3, et lui seul.
 
     streamlit run demo.py
 

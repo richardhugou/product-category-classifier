@@ -1,7 +1,7 @@
 """Références contre modernes : six représentations, une seule discipline.
 
 Il s'agit de comparer les solutions « historiques » du projet à des options
-plus récentes, sous le protocole de la partie 4 : même découpe stratifiée,
+plus récentes, sous le protocole de la partie 3 : même découpe stratifiée,
 même tête de classification, comparaison sur les 157 produits de validation.
 et le test n'est ouvert qu'une fois, pour le seul bras retenu.
 
