@@ -63,9 +63,10 @@ Commanditaire : Lead Data Scientist. Utilisateurs concernés : vendeurs et équi
 | Réglementaire | corpus sans donnée personnelle, images sous licence de recherche | usage d'étude ; une extension à des données vendeurs relèverait du RGPD |
 | Éthique | étiquette de référence produite par les vendeurs | la performance mesurée est bornée par la qualité de cette référence |
 
-**Périmètre retenu**, dans cet ordre : faisabilité avant tout engagement ; classification à partir du
-texte et de l'image ; décision d'abstention et routage en revue humaine ; neutralisation des champs
-porteurs de fuite ; collecte externe. Hors périmètre : classification hiérarchique complète, réglage
+**Périmètre retenu**, ordonné par impact sur le besoin puis par effort de réalisation :
+faisabilité avant tout engagement ; classification à partir du texte et de l'image ; décision
+d'abstention et routage en revue humaine ; neutralisation des champs porteurs de fuite ; collecte
+externe. Hors périmètre : classification hiérarchique complète, réglage
 fin des extracteurs, interface de correction.
 
 ---
@@ -123,7 +124,8 @@ fortement corrélée à la catégorie : 95 % des 338 absences se concentrent sur
 modèle recevant ce champ apprendrait une habitude de saisie, non le produit. Exclusion décidée,
 indicateur d'absence compris.
 
-**Écarts.**
+**Écarts.** Le processus en place a été évalué sur la justesse du classement, la validation des
+entrées, le coût et la maintenabilité.
 
 | Écart | Conséquence |
 |---|---|
@@ -336,6 +338,7 @@ automatisée est unitaire, au prix de 14,6 % du volume envoyé en revue.
 | Dérive du catalogue | perte de justesse silencieuse | suivi du taux d'automatisation, seuil d'alerte |
 | Entrées vendeurs non maîtrisées | sécurité | validation des formats et des tailles en entrée |
 | Charge de revue non affectée | 14,6 % du volume sans destinataire | dimensionner la file avant ouverture du service |
+| Images sous licence de recherche | réutilisation en production exclue | constituer un corpus propre à l'entreprise |
 
 Deux propriétés jouent en sens inverse : le seuil est un paramètre métier, donc l'arbitrage
 automatisation contre justesse se révise sans réentraînement ; et la modalité image est séparable,
@@ -406,7 +409,7 @@ la validation, qui automatise 85,4 % du volume avec 0,993 de propositions correc
 récents n'apportent pas systématiquement un gain : net en vision, nul ici sur le texte figé, où une
 référence lexicale reste en tête.
 
-**Recommandations, par ordre de priorité.**
+**Recommandations, par ordre de priorité.** La première est la prochaine étape.
 
 1. Faire arbitrer par l'équipe catalogue les frontières ambiguës, et ré-étiqueter en priorité les
    articles où le modèle contredit le vendeur avec une confiance élevée.
