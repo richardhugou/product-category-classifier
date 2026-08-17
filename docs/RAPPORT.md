@@ -260,13 +260,13 @@ au F1 macro sur la validation ; le jeu de test n'intervient jamais dans la séle
 
 | Représentation | Modalité | Dimensions | F1 macro, validation |
 |---|---|---|---|
-| **TF-IDF** | texte | 4 532 | **0,9365** |
-| DINOv2 figé, Vision Transformer | image | 1 536 | 0,9118 |
-| BERT figé | texte | 768 | 0,9050 |
-| ModernBERT figé | texte | 768 | 0,9035 |
-| VGG16 figé, CNN | image | 512 | 0,8216 |
+| **TF-IDF** | texte | 4 532 | **0,937** |
+| DINOv2 figé, Vision Transformer | image | 1 536 | 0,912 |
+| BERT figé | texte | 768 | 0,905 |
+| ModernBERT figé | texte | 768 | 0,904 |
+| VGG16 figé, CNN | image | 512 | 0,822 |
 
-- Texte : ModernBERT et BERT sont séparés de 0,0015 dans ce régime figé, et la référence lexicale
+- Texte : ModernBERT et BERT sont séparés de 0,001 dans ce régime figé, et la référence lexicale
   TF-IDF les devance tous deux.
 - Image : DINOv2 dépasse VGG16 de neuf points, sur les mêmes photographies et dans les mêmes
   conditions.
@@ -281,13 +281,14 @@ même architecture de classifieur.
 
 | Configuration | F1 macro, validation |
 |---|---|
-| Fusion TF-IDF ⊕ DINOv2 | **0,9366** |
-| TF-IDF seul | 0,9365 |
+| Fusion TF-IDF ⊕ DINOv2 | **0,937** |
+| TF-IDF seul | 0,937 |
 
-Quasi-égalité : aucun gain de la multimodalité n'est établi sur ce corpus. La règle de sélection
-fixée d'avance, meilleur F1 macro de validation, désigne la fusion. La lecture par catégorie est plus
-informative que la moyenne : la fusion gagne sur *Kitchen & Dining* et *Beauty and Personal Care*,
-perd sur *Computers* et *Home Decor & Festive Needs*.
+Les deux configurations sont indiscernables à cette précision : aucun gain de la multimodalité n'est
+établi sur ce corpus. La règle de sélection fixée d'avance, meilleur F1 macro de validation, désigne
+la fusion. La lecture par catégorie est plus informative que la moyenne : la fusion gagne sur
+*Kitchen & Dining* et *Beauty and Personal Care*, perd sur *Computers* et
+*Home Decor & Festive Needs*.
 
 **Avantages et inconvénients des approches candidates.**
 
@@ -361,8 +362,8 @@ d'univers domestique déjà observée en partie 3.2.
 | Coûts | extraction d'image à 99,8 % du coût d'inférence | conforme, avec un levier identifié |
 
 Le coût est concentré sur un seul poste, ce qui en fait le levier d'optimisation évident : renoncer à
-la modalité image ramènerait l'inférence à 0,12 ms par article pour 0,0001 point de F1 macro de
-validation cédé.
+la modalité image ramènerait l'inférence à 0,12 ms par article, pour une F1 macro de validation
+inchangée à cette précision.
 
 | Poste | Coût mesuré par article |
 |---|---|
@@ -427,9 +428,9 @@ fois sur le jeu de test.
 | Indicateur | Nature | Cible | Mesuré sur validation | Mesuré sur test |
 |---|---|---|---|---|
 | Taux d'automatisation | business | maximiser | 84,1 % | **85,4 %** |
-| Propositions correctes sur la part automatisée | business | ≥ 99 % | 0,9924 | **0,9926** |
+| Propositions correctes sur la part automatisée | business | ≥ 99 % | 0,992 | **0,993** |
 | Volume en revue humaine | business | minimiser | 25 articles sur 157 | **23 articles sur 158** |
-| F1 macro | technique | ≥ 0,90 | 0,9366 | **0,9873** |
+| F1 macro | technique | ≥ 0,90 | 0,937 | **0,987** |
 | Latence d'inférence | technique | compatible interactif | non applicable | **58,22 ms par article** |
 | Rejeu complet de la chaîne | technique | une commande | vérifié en intégration continue | vérifié |
 
@@ -444,7 +445,7 @@ automatisée est unitaire, au prix de 14,6 % du volume envoyé en revue.
 | Étalon déclaratif bruité | plafonne toute performance mesurable | faire arbitrer un échantillon par l'équipe catalogue, en priorité les cas où le modèle contredit le vendeur avec confiance (U3) |
 | Corpus artificiellement équilibré, 7 × 150 | performance non transposable telle quelle | réévaluer sur un extrait réel du catalogue avant mise en service |
 | Photographies de catalogue soignées | dégradation probable sur des prises de vue vendeurs | mesurer sur un lot de photographies non retouchées |
-| Dépendance à un extracteur pré-entraîné externe | rupture de disponibilité ou de licence | artefact figé et versionné localement ; TF-IDF seul comme repli à 0,0001 point près |
+| Dépendance à un extracteur pré-entraîné externe | rupture de disponibilité ou de licence | artefact figé et versionné localement ; TF-IDF seul comme repli, à écart nul à cette précision |
 | Dérive du catalogue, nouvelles familles de produits | perte de justesse silencieuse | surveillance du taux d'automatisation, seuil d'alerte, réentraînement planifié |
 | Concentration du coût sur l'extraction d'image | coût d'exploitation | traitement par lots, cache des caractéristiques, ou bascule sur le texte seul |
 
@@ -543,7 +544,7 @@ rapportés deux fois.
 fournies par les vendeurs : la faisabilité est établie avant tout engagement. Le comparatif à
 protocole constant désigne la fusion TF-IDF ⊕ DINOv2, qui obtient 0,987 de F1 macro et 156 articles
 sur 158 sur un jeu réservé ouvert une seule fois. La décision est séparée du modèle par un seuil de
-confiance choisi sur la validation, qui automatise 85,4 % du volume avec 0,9926 de propositions
+confiance choisi sur la validation, qui automatise 85,4 % du volume avec 0,993 de propositions
 correctes. Les modèles récents n'apportent pas systématiquement un gain : net en vision, nul ici sur
 le texte figé, où une référence lexicale reste en tête.
 
