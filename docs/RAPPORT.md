@@ -346,7 +346,7 @@ son protocole, et certains sont rapportés deux fois.
 
 # Annexes
 
-## A. Rejouer l'étude
+## A. Rejeu de l'étude
 
 ```bash
 python -m venv .venv && source .venv/bin/activate

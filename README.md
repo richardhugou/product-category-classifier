@@ -9,7 +9,7 @@ permettent-elles de retrouver automatiquement la catégorie d'un article ?
 
 ---
 
-## Le problème
+## Problématique
 
 Sur une marketplace, chaque vendeur choisit lui-même la catégorie de son article au moment de la
 mise en ligne. À mesure que le volume augmente, deux vendeurs classent des produits semblables à
@@ -20,7 +20,7 @@ vend pas.
 Le jeu d'étude compte 1 050 produits, 7 catégories de 150 produits, une description en anglais et une
 photographie par article.
 
-## Ce que l'étude établit
+## Résultats
 
 **Les catégories sont déjà présentes dans les données.** Sans montrer une seule étiquette, la chaîne
 projette les produits en deux dimensions, un K-means forme sept groupes, et l'indice de Rand ajusté
@@ -62,7 +62,7 @@ déplace les erreurs d'une catégorie à l'autre.
 regroupent avec les serviettes et les pyjamas de bébé, sans étiquettes comme avec. L'algorithme
 regroupe par matière et mise en scène ; la nomenclature regroupe par usage commercial.
 
-## Reproduire
+## Reproduction
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
@@ -110,7 +110,7 @@ Autres cibles : `make test`, `make lint`, `make notebooks`, `make help`.
 Tous les scripts l'appellent, ce qui garantit que les chiffres se comparent entre eux, et
 `tests/test_pipeline.py` vérifie que les trois parts sont disjointes.
 
-## Au-delà de la mission
+## Extensions hors périmètre
 
 Le dépôt prolonge l'étude par un benchmark de représentations, texte et image, à découpe et
 classifieur constants, puis par la fusion des deux modalités : `scripts/comparer_modernes.py`,
