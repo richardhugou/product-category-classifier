@@ -17,6 +17,7 @@ Le catalogue est en croissance. Aucun modèle de catégorisation ni dispositif d
 **Enjeu principal :** proposer automatiquement une catégorie à partir des informations déjà fournies par le vendeur.
 
 Contraintes retenues :
+
 - premier niveau de nomenclature uniquement ;
 - calcul local ;
 - solution reproductible et transportable ;
@@ -33,6 +34,7 @@ Le brief du commanditaire comporte trois demandes :
 3. tester la collecte de nouveaux produits via une source externe.
 
 L'analyse initiale des données ajoute deux exigences :
+
 - exclure les variables susceptibles de créer une fuite ;
 - harmoniser les formats d'image.
 
@@ -68,6 +70,7 @@ La catégorie est saisie par le vendeur puis utilisée directement pour le filtr
 ## 2.2 Données disponibles
 
 Chaque article contient notamment :
+
 - `product_name` ;
 - `description` ;
 - `product_category_tree` ;
@@ -90,16 +93,32 @@ La catégorie reste une **étiquette déclarative** : elle peut contenir des err
 ## 2.3 Audit des entrées
 
 Les descriptions sont des fiches de spécifications plutôt que du texte rédigé :
+
 - 13 à 587 mots ;
 - médiane : 44 mots ;
 - longueur médiane différente selon les catégories.
 
 Les photographies sont hétérogènes :
+
 - 890 tailles distinctes sur 1 050 fichiers ;
 - ratios de 0,23 à 4,36 ;
 - jusqu'à 93 mégapixels.
 
 ![Équilibre des classes et longueurs de description](../reports/fig4_donnees.png)
+
+### Prétraitements
+
+Texte : passage en minuscules, suppression de la ponctuation, découpage en mots, retrait des
+mots-outils anglais et des mots de moins de trois lettres. Sur l'exemple de référence, 35 mots bruts
+donnent 29 jetons.
+
+Ni stemming ni lemmatisation. Les descriptions contiennent 462 jetons alphanumériques distincts, soit
+974 occurrences, principalement des références de modèles (`cr540e`), souvent les termes les plus
+discriminants d'une fiche. Les tronquer ou les ramener à une forme canonique détruirait cette
+information. Les chiffres sont conservés pour la même raison.
+
+Image : 224 pixels et normalisation ImageNet pour le réseau convolutif ; niveaux de gris, égalisation
+d'histogramme et 256 pixels pour SIFT.
 
 ### Fuite détectée
 
@@ -144,6 +163,7 @@ Les trois premiers cas d'usage reposent sur le même modèle.
 La première étape vérifie si les catégories sont déjà structurées dans les données, sans apprentissage supervisé.
 
 Huit représentations sont comparées :
+
 - texte : comptage, bigrammes, TF-IDF, Word2Vec, BERT, USE ;
 - image : SIFT + BoVW, VGG16.
 
@@ -168,7 +188,7 @@ Après réduction et partitionnement en 7 groupes, l'accord avec les catégories
 
 La confusion la plus visible concerne *Home Furnishing* et *Baby Care*, notamment pour des textiles photographiés dans des conditions proches.
 
-## 3.3 Benchmark supervisé 2026
+## 3.3 Benchmark supervisé
 
 Le benchmark compare les représentations dans un protocole commun :
 
@@ -188,6 +208,11 @@ Le benchmark compare les représentations dans un protocole commun :
 | ModernBERT | texte | 0,904 |
 | VGG16 | image | 0,822 |
 
+**Classifieur.** Perceptron multicouche à une couche cachée de 256 neurones, activation ReLU, sortie
+softmax sur 7 catégories. Optimiseur Adam, régularisation L2, 500 itérations au plus, arrêt anticipé
+sur 10 % du jeu d'entraînement que le classifieur met de côté, graine fixe. Seule cette tête apprend :
+les extracteurs restent figés.
+
 **Texte :** BERT et ModernBERT n'apportent pas d'avantage par rapport à TF-IDF dans ce protocole.
 
 **Image :** DINOv2 améliore nettement les performances par rapport à VGG16, avec environ **+9 points de F1 macro**.
@@ -197,6 +222,7 @@ Le benchmark compare les représentations dans un protocole commun :
 ### Fusion multimodale
 
 Les deux meilleures représentations par modalité sont concaténées :
+
 - TF-IDF : 4 532 caractéristiques ;
 - DINOv2 : 1 536 caractéristiques ;
 - représentation finale : 6 068 caractéristiques.
@@ -274,6 +300,7 @@ L'extraction DINOv2 représente l'essentiel du coût. TF-IDF seul conserve un F1
 Open Food Facts est utilisé pour tester une collecte sur l'épicerie fine.
 
 Résultat :
+
 - 10 produits ;
 - 5 champs collectés ;
 - 2 compositions manquantes.
@@ -358,6 +385,7 @@ Aucun chiffrage de charge n'a été produit dans le cadre du projet.
 | coût de calcul | rejeu complet ≈ 20 min sur poste local |
 
 Gestion Git :
+
 - `main` : versions publiées ;
 - `develop` : intégration ;
 - branches dédiées par lot ;
@@ -394,7 +422,7 @@ Ces erreurs n'étaient pas des erreurs d'exécution : le code fonctionnait, mais
 
 La faisabilité de la catégorisation automatique est établie sur le corpus étudié.
 
-Le benchmark 2026 montre deux résultats principaux :
+Le benchmark montre deux résultats principaux :
 
 - **texte :** TF-IDF reste devant BERT et ModernBERT dans le régime figé ;
 - **image :** DINOv2 améliore nettement VGG16.
@@ -405,14 +433,14 @@ Le seuil de confiance permet de transformer le classifieur en service avec abste
 
 ## Recommandations
 
-1. Réévaluer la solution sur un échantillon réel du catalogue, non équilibré et avec des photographies vendeurs.
-2. Faire arbitrer et ré-étiqueter un échantillon des catégories ambiguës.
-3. Dimensionner la revue humaine avant mise en service.
-4. Mettre en place authentification, validation des entrées et journalisation.
-5. Sur un corpus élargi, tester le fine-tuning de BERT / ModernBERT / DINOv2.
-6. Répéter les expériences sur plusieurs splits ou seeds afin de quantifier l'incertitude.
-7. Réévaluer ensuite l'intérêt de la fusion multimodale.
-8. Étendre à la classification hiérarchique uniquement après validation sur le premier niveau.
+1. Réévaluer la solution sur un échantillon réel du catalogue, non équilibré et avec des
+   photographies vendeurs, et faire ré-étiqueter un échantillon des catégories ambiguës.
+2. Mettre en service avec authentification, validation des entrées et journalisation, après avoir
+   dimensionné la revue humaine.
+3. Sur un corpus élargi, tester le fine-tuning de BERT / ModernBERT / DINOv2.
+4. Répéter les expériences sur plusieurs splits ou seeds afin de quantifier l'incertitude, et
+   réévaluer sur cette base l'intérêt de la fusion multimodale.
+5. Étendre à la classification hiérarchique uniquement après validation sur le premier niveau.
 
 ---
 
