@@ -1,4 +1,4 @@
-"""Caractéristiques visuelles — encodeur figé, mises en cache sur disque.
+"""Caractéristiques visuelles : encodeur figé, mises en cache sur disque.
 
 Complément aux caractéristiques VGG16 de l'étude : DINOv2 est entraîné en
 auto-supervision précisément pour produire de bonnes représentations **figées**,
@@ -6,7 +6,7 @@ ce qui n'est pas le cas d'un modèle de langage masqué dont on moyennerait les
 jetons. Hors du périmètre de la mission, qui impose un réseau convolutif.
 
 Représentation retenue : jeton de classe concaténé à la moyenne des jetons de
-patch — le protocole d'évaluation linéaire de DINOv2.
+patch : le protocole d'évaluation linéaire de DINOv2.
 
     python -m src.images        # précalcule et met en cache
 """

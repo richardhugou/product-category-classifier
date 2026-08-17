@@ -4,17 +4,17 @@ Le résultat à expliquer : figés et moyennés, BERT (0,905) et ModernBERT (0,9
 restent derrière TF-IDF (0,9365), quand DINOv2 domine largement VGG16 côté
 image. Quatre hypothèses mesurables :
 
-    H1 — le regroupement : la moyenne des jetons dilue les mots rares ;
+    H1 : le regroupement : la moyenne des jetons dilue les mots rares ;
          le jeton de classe s'en sortirait-il mieux ?
-    H2 — la troncature : 256 jetons coupent les fiches longues ; ModernBERT
-         accepte 8 192 — que donne 1 024 ?
-    H3 — l'échelle : les vecteurs non normalisés désavantagent-ils la tête ?
-    H4 — côté image : DINOv2 gagne-t-il par son architecture (Vision
+    H2 : la troncature : 256 jetons coupent les fiches longues ; ModernBERT
+         accepte 8 192 : que donne 1 024 ?
+    H3 : l'échelle : les vecteurs non normalisés désavantagent-ils la tête ?
+    H4 : côté image : DINOv2 gagne-t-il par son architecture (Vision
          Transformer) ou par son pré-entraînement auto-supervisé ? Un ViT
          supervisé ImageNet départage.
 
 Et deux diagnostics : la part de fiches réellement tronquées, et la similarité
-moyenne entre fiches — si le gabarit commun écrase tout, deux fiches au hasard
+moyenne entre fiches : si le gabarit commun écrase tout, deux fiches au hasard
 se ressemblent déjà beaucoup pour un encodeur contextuel.
 
 Le jeu de test n'est jamais touché : on cherche à comprendre, pas à conclure.
@@ -69,7 +69,7 @@ def encoder_variante(textes, tok, mdl, device, regroupement="moyenne", max_len=2
 
 
 def encoder_image(uniq_ids, model_id, device):
-    """Jeton de classe + moyenne des patches — le même protocole que DINOv2."""
+    """Jeton de classe + moyenne des patches : le même protocole que DINOv2."""
     import torch
     from PIL import Image
     from transformers import AutoImageProcessor, AutoModel
@@ -177,7 +177,7 @@ def main() -> None:
     print(f"  fiches ratées par BERT et rattrapées par TF-IDF : {len(rattrapees)}")
     for i, ligne in rattrapees[:3]:
         print(
-            f"    « {str(ligne['product_name']).strip()[:48]} » — "
+            f"    « {str(ligne['product_name']).strip()[:48]} », "
             f"{enc.classes_[y_va[i]]} lu {enc.classes_[pred_bert[i]]}"
         )
 

@@ -3,7 +3,7 @@
 La normalisation L2 est faite **ligne par ligne**. C'est le point important :
 chaque vecteur est divisé par sa propre norme, donc la transformation n'a aucun
 paramètre appris entre échantillons. Elle ne peut pas fuir d'un pli à l'autre,
-et elle met les deux blocs à la même échelle avant concaténation — le TF-IDF de
+et elle met les deux blocs à la même échelle avant concaténation : le TF-IDF de
 scikit-learn étant déjà normalisé en L2 par défaut.
 """
 

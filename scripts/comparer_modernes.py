@@ -2,15 +2,15 @@
 
 Il s'agit de comparer les solutions « historiques » du projet à des options
 plus récentes, sous le protocole de la partie 4 : même découpe stratifiée,
-même tête de classification, comparaison sur les 157 produits de validation —
+même tête de classification, comparaison sur les 157 produits de validation.
 et le test n'est ouvert qu'une fois, pour le seul bras retenu.
 
-    Texte — TF-IDF (référence) · BERT figé (2018) · ModernBERT figé (2024)
-    Image — VGG16 figé (référence CNN) · DINOv2 figé (Vision Transformer)
-    Mixte — description TF-IDF + image DINOv2, concaténées
+    Texte : TF-IDF (référence) · BERT figé (2018) · ModernBERT figé (2024)
+    Image : VGG16 figé (référence CNN) · DINOv2 figé (Vision Transformer)
+    Mixte : description TF-IDF + image DINOv2, concaténées
 
 Aucune augmentation ici : on compare des représentations, pas des stratégies
-d'entraînement. Les encodeurs restent figés — aucun poids n'est réglé.
+d'entraînement. Les encodeurs restent figés : aucun poids n'est réglé.
 
     python scripts/comparer_modernes.py
 """
@@ -103,7 +103,7 @@ def main() -> None:
     }
 
     # ------------------------------------- même tête partout, lecture sur validation
-    print("\nMême tête de classification pour les six bras — validation")
+    print("\nMême tête de classification pour les six bras : validation")
     lignes, par_classe, modeles = [], {}, {}
     for nom, b in bras.items():
         clf = tete().fit(b["tr"], y_tr)
@@ -176,7 +176,7 @@ def main() -> None:
     axe.set_ylim(0, 1.05)
     axe.legend(fontsize=8, frameon=False, ncol=2)
     axe.set_title(
-        "Références et modernes, catégorie par catégorie — jeu de validation", fontsize=12
+        "Références et modernes, catégorie par catégorie : jeu de validation", fontsize=12
     )
     for bord in ("top", "right"):
         axe.spines[bord].set_visible(False)

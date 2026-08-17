@@ -1,10 +1,10 @@
-"""Démonstration — catégoriser un article par le texte, par l'image, ou par les deux.
+"""Démonstration : catégoriser un article par le texte, par l'image, ou par les deux.
 
     streamlit run app.py
 
 Les trois modèles tournent côte à côte sur le même article : c'est le seul
 moyen de voir *où* l'image apporte quelque chose. Le seuil de confiance
-matérialise UC4 — sous le seuil, le modèle ne tranche pas et l'article part en
+matérialise UC4 : sous le seuil, le modèle ne tranche pas et l'article part en
 revue humaine.
 """
 
@@ -48,7 +48,7 @@ st.set_page_config(page_title="Catégorisation d'articles", page_icon="🏷️",
 
 
 def _empreinte(p: Path) -> str:
-    """Version du modèle — REQ-08. Toute prédiction est rattachable à son modèle."""
+    """Version du modèle : REQ-08. Toute prédiction est rattachable à son modèle."""
     return hashlib.sha256(p.read_bytes()).hexdigest()[:12]
 
 
@@ -71,7 +71,7 @@ def get_modeles():
 
 @st.cache_resource
 def get_encodeur_image():
-    """Chargé seulement si une photographie est téléversée — 346 Mo."""
+    """Chargé seulement si une photographie est téléversée : 346 Mo."""
     import torch
 
     from src.images import _load_encoder
@@ -174,7 +174,7 @@ with droite:
 
 
 def graphe_probabilites(series: dict[str, np.ndarray], vrai: str | None):
-    """Barres groupées horizontales — une barre par modèle et par catégorie.
+    """Barres groupées horizontales : une barre par modèle et par catégorie.
 
     Surtout pas d'empilement : additionner les probabilités de deux modèles
     n'a aucun sens, et la hauteur cumulée se lirait comme une valeur.
@@ -191,7 +191,7 @@ def graphe_probabilites(series: dict[str, np.ndarray], vrai: str | None):
     noms = list(series.keys())
 
     # Le repère de vérité terrain vit sur l'étiquette d'axe et cumule trois
-    # signaux — un chevron, la graisse et un contraste maximal. Aucun n'est une
+    # signaux : un chevron, la graisse et un contraste maximal. Aucun n'est une
     # teinte : une couleur d'annotation ne doit jamais pouvoir se lire comme une
     # série, et l'or que j'avais d'abord retenu se confondait avec l'orange de
     # « Image seule », a fortiori sous déficience de perception rouge-vert.
@@ -248,7 +248,7 @@ def graphe_probabilites(series: dict[str, np.ndarray], vrai: str | None):
     )
     # Étiquettes directes : avec trois séries, l'œil ne compare pas des
     # longueurs proches de façon fiable. On étiquette les trois barres de chaque
-    # groupe ou aucune — un étiquetage au cas par cas se lit comme un oubli.
+    # groupe ou aucune : un étiquetage au cas par cas se lit comme un oubli.
     etiquettes = base.mark_text(align="left", dx=5, fontSize=11, color=ENCRE_DOUCE).encode(
         x=alt.X("Probabilité:Q", scale=alt.Scale(domain=[0, 1])),
         text=alt.Text("Probabilité:Q", format=".0%"),
@@ -310,9 +310,9 @@ if st.button("Catégoriser", type="primary") and texte.strip():
         verdicts[nom] = categorie
         with col:
             # Bloc composé à la main plutôt que st.metric + st.progress :
-            #   — st.metric tronque les valeurs longues, et « Home Decor &
+            #   : st.metric tronque les valeurs longues, et « Home Decor &
             #     Festive Needs » est précisément la bonne réponse ;
-            #   — st.progress ne se colore pas, si bien que la jauge restait
+            #   : st.progress ne se colore pas, si bien que la jauge restait
             #     bleue sous une pastille orange : la couleur cessait de
             #     désigner la série.
             teinte = COULEURS[nom]
@@ -345,7 +345,7 @@ if st.button("Catégoriser", type="primary") and texte.strip():
     if vrai:
         justes = [n for n, c in verdicts.items() if c == vrai]
         st.info(
-            f"**Catégorie réelle : {vrai}** — "
+            f"**Catégorie réelle : {vrai}**, "
             + (f"trouvée par : {', '.join(justes)}." if justes else "aucun modèle ne la trouve.")
         )
 
@@ -354,7 +354,7 @@ if st.button("Catégoriser", type="primary") and texte.strip():
         "Une barre par modèle et par catégorie. Les barres ne sont pas empilées : "
         "additionner les probabilités de deux modèles n'aurait aucun sens."
         + (
-            " La catégorie marquée d'un chevron sur l'axe est la vérité terrain — "
+            " La catégorie marquée d'un chevron sur l'axe est la vérité terrain : "
             "la référence contre laquelle les trois modèles se jugent."
             if vrai
             else ""
@@ -387,8 +387,8 @@ with st.expander("Le benchmark complet"):
         st.dataframe(pd.read_csv(p), use_container_width=True, hide_index=True)
         st.caption(
             "Cinq modèles sur six franchissent le seuil métier : il ne départage donc rien. "
-            "Le critère de décision devient le coût. La fusion gagne 3 points de F1 — et "
-            "surtout 8 points sur la catégorie la plus faible — pour 600 fois le coût "
+            "Le critère de décision devient le coût. La fusion gagne 3 points de F1, et "
+            "surtout 8 points sur la catégorie la plus faible : pour 600 fois le coût "
             "d'inférence du modèle texte."
         )
     else:

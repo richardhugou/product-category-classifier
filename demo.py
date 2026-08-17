@@ -1,10 +1,10 @@
-"""Démonstration — le modèle de la partie 4, et lui seul.
+"""Démonstration : le modèle de la partie 4, et lui seul.
 
     streamlit run demo.py
 
 Un seul chemin : la photographie entre, VGG16 figé en tire 512 nombres, la
 tête rend 7 probabilités. C'est exactement le modèle sélectionné sur la
-validation puis évalué sur le jeu réservé — F1 macro 0,867, 137 produits sur
+validation puis évalué sur le jeu réservé : F1 macro 0,867, 137 produits sur
 158. Aucun autre modèle n'est chargé ici : `app.py` compare le texte, l'image
 et leur fusion, ce qui relève d'un travail complémentaire et d'un autre
 protocole.
@@ -47,7 +47,7 @@ def charger():
 
 @st.cache_data
 def catalogue():
-    """Les 158 produits du jeu réservé — les seuls que le modèle n'a jamais vus."""
+    """Les 158 produits du jeu réservé : les seuls que le modèle n'a jamais vus."""
     from src.pretraitement import chemin_image
 
     _, _, test = split(load())
@@ -57,7 +57,7 @@ def catalogue():
 
 
 def encoder(image: Image.Image, device, socle) -> np.ndarray:
-    """Le même prétraitement qu'à l'entraînement — sinon le modèle voit autre chose."""
+    """Le même prétraitement qu'à l'entraînement : sinon le modèle voit autre chose."""
     import torch
     from torchvision.transforms import functional as F
 
@@ -113,7 +113,7 @@ with droite:
     )
     if verite is not None:
         juste = etiquettes[ordre[0]] == verite
-        st.caption(f"Catégorie réelle : **{verite}** — {'correct' if juste else 'erreur'}")
+        st.caption(f"Catégorie réelle : **{verite}**, {'correct' if juste else 'erreur'}")
     st.bar_chart(
         pd.DataFrame({"probabilité": probas[ordre]}, index=[etiquettes[i] for i in ordre]),
         horizontal=True,

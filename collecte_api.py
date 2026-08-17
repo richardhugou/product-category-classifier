@@ -5,7 +5,7 @@ récupérant les dix premiers produits associés au champagne, avec cinq champs
 précis : `foodId`, `label`, `category`, `foodContentsLabel` et `image`.
 
 Ces noms de champs viennent du schéma d'Edamam. Nous interrogeons Open Food
-Facts, qui ne demande aucune inscription — le script reste donc exécutable
+Facts, qui ne demande aucune inscription : le script reste donc exécutable
 par n'importe qui, sans clé à transmettre. Cela impose en revanche de faire
 correspondre les deux vocabulaires, et cette correspondance est le seul
 endroit du script où un jugement intervient : elle est explicitée dans
@@ -57,7 +57,7 @@ def interroger(terme: str, nombre: int) -> list[dict]:
 
     Le filtre porte sur la catégorie et non sur le texte libre. Une recherche
     plein texte sur « champagne » remonte aussi les produits qui se contentent
-    de mentionner le mot — vinaigres, sauces, arômes —, ce qui n'est pas ce
+    de mentionner le mot : vinaigres, sauces, arômes, ce qui n'est pas ce
     qu'on cherche à collecter.
 
     Le service répond parfois 503 sans raison durable ; on réessaie plutôt que
@@ -74,13 +74,13 @@ def interroger(terme: str, nombre: int) -> list[dict]:
 
     for essai in range(1, TENTATIVES + 1):
         try:
-            with urllib.request.urlopen(requete, timeout=60) as reponse:  # noqa: S310 — URL fixe
+            with urllib.request.urlopen(requete, timeout=60) as reponse:  # noqa: S310, URL fixe
                 return json.load(reponse).get("products", [])[:nombre]
         except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as erreur:
             if essai == TENTATIVES:
                 raise
             attente = 2**essai
-            print(f"  tentative {essai} — {erreur}, nouvelle tentative dans {attente} s")
+            print(f"  tentative {essai} : {erreur}, nouvelle tentative dans {attente} s")
             time.sleep(attente)
     return []
 

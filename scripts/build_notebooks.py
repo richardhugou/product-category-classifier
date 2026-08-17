@@ -1,6 +1,6 @@
 """Construit les carnets qui suivent la mission, puis les exécute.
 
-Les carnets 01 et 02 — exploration et visualisation — restent valables tels
+Les carnets 01 et 02, exploration et visualisation, restent valables tels
 quels. Les suivants sont reconstruits ici pour suivre l'ordre de la mission :
 représenter, projeter et mesurer, classer, collecter.
 
@@ -38,18 +38,18 @@ def code(source: str) -> nbformat.NotebookNode:
 
 REPRESENTATIONS = [
     md("""
-# 03 · Représenter le texte et les images
+# 03 · Représentations du texte et des images
 
 **Ce que fait ce carnet.** Un algorithme ne compare pas des mots ni des pixels : il compare des
-nombres. Ce carnet applique les sept représentations demandées par la mission — cinq pour le texte,
-deux pour l'image — et montre ce que chacune produit sur un même article.
+nombres. Ce carnet applique les sept représentations demandées par la mission : cinq pour le texte,
+deux pour l'image, et montre ce que chacune produit sur un même article.
 
 **Ce qu'il établit.** Chaque produit existe désormais sous sept formes numériques, de 256 à 5 000
 dimensions. Le carnet suivant dira laquelle rapproche les produits d'une même catégorie.
 """),
     code(EN_TETE),
     md("""
-## L'article que nous suivons
+## Article de référence
 
 Une montre, dont la fiche tient en trente-quatre mots. Nous la garderons sous la main dans tous les
 carnets, jusqu'à sa prédiction finale.
@@ -65,7 +65,7 @@ print()
 print(montre[TEXT_COL])
 """),
     md("""
-## Du texte brut aux jetons
+## Du texte brut aux tokens
 
 Minuscules, ponctuation retirée, mots-outils anglais écartés. Rien de plus : ni racinisation, ni
 correction orthographique. Tronquer les mots détruirait des références de modèles, qui sont parfois
@@ -84,7 +84,7 @@ print(" · ".join(etapes["jetons"]))
 
 Le comptage est la référence la plus rudimentaire qu'on puisse construire : combien de fois chaque
 mot apparaît. Le TF-IDF reprend ce comptage et le divise par la fréquence du terme dans tout le
-corpus — un mot présent partout ne distingue rien.
+corpus : un mot présent partout ne distingue rien.
 
 L'effet se lit sur notre montre : `color`, en tête au comptage, disparaît des premiers rangs une
 fois pondéré, parce qu'il apparaît dans presque toutes les fiches du catalogue.
@@ -112,11 +112,11 @@ print(f"TF-IDF   : {len(noms_tf)} termes au vocabulaire")
 print("  ", sommet(tf.transform([montre[TEXT_COL]]), noms_tf))
 """),
     md("""
-## Les sept représentations
+## Sept représentations
 
 Word2Vec apprend un vecteur par mot sur notre seul corpus, BERT produit une représentation qui
 dépend du contexte, USE représente la phrase entière. Côté image, SIFT décrit des points
-remarquables regroupés en « mots visuels », et VGG16 — privé de sa couche de classification — sert
+remarquables regroupés en « mots visuels », et VGG16, privé de sa couche de classification, sert
 d'extracteur.
 
 Tout est mis en cache : le premier calcul prend plusieurs minutes, les suivants sont immédiats.
@@ -135,10 +135,10 @@ for famille, registre in (("texte", TEXTE), ("image", IMAGE)):
         print(f"  {nom:22s} {X.shape[0]} × {X.shape[1]:5d}  ({etat})")
 """),
     md("""
-## Ce que la montre devient
+## Représentations de l'article de référence
 
-La même fiche, traduite sept fois. Les représentations lexicales sont creuses — la quasi-totalité
-des dimensions vaut zéro — là où les représentations denses n'ont aucune valeur nulle.
+La même fiche, traduite sept fois. Les représentations lexicales sont creuses : la quasi-totalité
+des dimensions vaut zéro : là où les représentations denses n'ont aucune valeur nulle.
 """),
     code("""
 i = int(np.where(df["uniq_id"].values == montre["uniq_id"])[0][0])
@@ -167,7 +167,7 @@ suivant.
 
 FAISABILITE = [
     md("""
-# 04 · Étude de faisabilité — projeter, regrouper, mesurer
+# 04 · Étude de faisabilité · projection, regroupement, mesure
 
 **Ce que fait ce carnet.** Il répond à la question centrale de la mission : les produits d'une même
 catégorie se rapprochent-ils spontanément, une fois traduits en nombres ? On projette en deux
@@ -175,12 +175,12 @@ dimensions pour regarder, puis on mesure l'accord entre des groupes formés sans
 vraies catégories.
 
 **Ce qu'il établit.** L'information est bien présente. Les caractéristiques visuelles issues d'un
-réseau pré-entraîné structurent le catalogue nettement mieux que le texte — et bien mieux que SIFT,
+réseau pré-entraîné structurent le catalogue nettement mieux que le texte, et bien mieux que SIFT,
 qui reste proche du hasard sur les mêmes photographies.
 """),
     code(EN_TETE),
     md("""
-## Le protocole
+## Protocole
 
 L'étude est non supervisée : les catégories ne servent qu'à colorier les graphiques et à mesurer
 l'accord final. Elles n'entrent jamais dans la construction des représentations, ce qui autorise à
@@ -207,7 +207,7 @@ for famille, registre in (("texte", TEXTE), ("image", IMAGE)):
         print(f"  {nom:22s} ARI projection {etudes[nom]['ARI projection']:.3f}")
 """),
     md("""
-## L'indice de Rand ajusté, et ce qu'il n'est pas
+## Indice de Rand ajusté · lecture et contresens
 
 L'indice compare deux découpages d'un même ensemble. Il vaut 1 lorsqu'ils coïncident, 0 lorsque leur
 accord n'excède pas le hasard. L'ajustement compte : avec sept groupes de tailles voisines, deux
@@ -217,7 +217,7 @@ découpages tirés au sort présentent déjà un accord apparent que l'indice br
 proportion, et les groupes formés n'ont d'ailleurs pas de nom : rien ne dit lequel correspond aux
 montres.
 
-Nous rapportons la mesure deux fois — sur la projection, que nous avons regardée, et sur la
+Nous rapportons la mesure deux fois : sur la projection, que nous avons regardée, et sur la
 représentation complète, parce que t-SNE déforme et qu'il serait commode de ne retenir que le plus
 flatteur des deux chiffres.
 """),
@@ -235,10 +235,10 @@ tableau = pd.DataFrame([
 tableau
 """),
     md("""
-## Ce que le tableau dit
+## Lecture du tableau
 
 **Sur les mêmes photographies**, VGG16 atteint 0,51 quand SIFT reste proche du hasard. SIFT décrit
-des motifs locaux — un angle, une texture — utiles pour reconnaître qu'une même scène a été
+des motifs locaux, un angle, une texture, utiles pour reconnaître qu'une même scène a été
 photographiée deux fois, mais qui ne disent rien de ce qu'est l'objet.
 
 **VGG16 est la seule représentation dont l'accord est meilleur avant réduction qu'après.** Sa
@@ -258,11 +258,11 @@ croise = pd.crosstab(
     pd.Series(categories, name="catégorie réelle"),
     pd.Series(etude["groupes_projection"], name="groupe"),
 )
-print(f"{meilleure} — chaque catégorie a-t-elle son groupe ?")
+print(f"{meilleure} : chaque catégorie a-t-elle son groupe ?")
 croise
 """),
     md("""
-## Là où ça résiste
+## Zones de confusion
 
 *Home Furnishing* se scinde presque en deux : une moitié dans son groupe, l'autre dans celui de
 *Baby Care*. Regardons ce que contient réellement cette seconde moitié.
@@ -312,7 +312,7 @@ l'autre.
 """),
     code(EN_TETE),
     md("""
-## Le protocole, et pourquoi il compte
+## Protocole
 
 Tant qu'on cherchait à savoir si des groupes existaient, tout le corpus pouvait servir. Il faut à
 présent réserver des produits que le modèle ne verra pas pendant son apprentissage.
@@ -338,7 +338,7 @@ ids_tr, ids_va, ids_te = (d["uniq_id"].tolist() for d in (train, val, test))
 print(f"entraînement {len(ids_tr)} · validation {len(ids_va)} · réservé {len(ids_te)}")
 """),
     md("""
-## Le modèle
+## Modèle
 
 VGG16 conserve ses poids d'origine et sert d'extracteur ; seule une petite tête de classification
 est apprise par-dessus. Réajuster les 138 millions de paramètres du réseau sur 735 images le
@@ -354,7 +354,7 @@ X_te, _ = extraire(ids_te)
 print(f"chaque image devient {X_tr.shape[1]} nombres")
 """),
     md("""
-## La montre, une dernière fois
+## Article de référence
 
 Elle appartient au jeu réservé : le modèle ne l'a jamais vue.
 """),
@@ -369,7 +369,7 @@ for categorie, p in sorted(zip(etiquettes, probabilites), key=lambda t: -t[1]):
     print(f"  {categorie:28s} {p:.3f}")
 """),
     md("""
-## La data augmentation
+## Data augmentation
 
 On fabrique de nouvelles images d'entraînement en transformant celles dont on dispose. Le choix des
 transformations est contraint par la nature des photographies : des produits de catalogue, centrés
@@ -408,8 +408,8 @@ for nom, intensite, n in strategies:
 pd.DataFrame(selection).sort_values("F1 macro (validation)", ascending=False)
 """),
     md("""
-Sur la validation, l'augmentation douce obtient le meilleur score. Le gain — six millièmes de point
-de F1 macro, soit **moins d'un produit sur 157** — est trop faible pour conclure à une amélioration
+Sur la validation, l'augmentation douce obtient le meilleur score. Le gain : six millièmes de point
+de F1 macro, soit **moins d'un produit sur 157** : est trop faible pour conclure à une amélioration
 nette. Une augmentation plus forte et répétée dégrade en revanche nettement la performance.
 
 Une explication possible tient à la nature très standardisée des photographies : multiplier les
@@ -430,7 +430,7 @@ qu'elle ne les supprime**.
 Cela suggère qu'une augmentation générique, appliquée uniformément, n'est probablement pas la bonne
 stratégie.
 
-## Le jeu réservé, ouvert une fois
+## Jeu réservé · une seule ouverture
 """),
     code("""
 retenue = max(selection, key=lambda r: r["F1 macro (validation)"])["Stratégie"]
@@ -477,13 +477,13 @@ qualité et d'homogénéité des métadonnées, à traiter en amont du modèle.
 """),
     code(EN_TETE),
     md("""
-## La source et la correspondance des champs
+## Source et correspondance des champs
 
 Open Food Facts ne demande aucune inscription : le carnet reste exécutable par un tiers, sans clé à
 transmettre. Cette base est alimentée de façon collaborative, ce qui aura son importance.
 
 Les cinq champs attendus viennent du schéma d'Edamam, l'autre source proposée. Quatre
-correspondances sont évidentes ; la cinquième demande un jugement — `foodContentsLabel` désigne la
+correspondances sont évidentes ; la cinquième demande un jugement : `foodContentsLabel` désigne la
 composition d'un produit, dont `ingredients_text` est l'équivalent le plus proche.
 """),
     code("""
@@ -494,10 +494,10 @@ pd.DataFrame(
 )
 """),
     md("""
-## La collecte
+## Collecte
 
 Le filtre porte sur la catégorie et non sur le texte libre : une recherche plein texte remonterait
-aussi tout ce qui mentionne le mot sans en être — vinaigres, sauces, arômes.
+aussi tout ce qui mentionne le mot sans en être : vinaigres, sauces, arômes.
 """),
     code("""
 produits = [normaliser(p) for p in interroger("champagne", 10)]
@@ -511,7 +511,7 @@ for champ in CORRESPONDANCE:
 collecte[["foodId", "label", "category"]]
 """),
     md("""
-## Ce que la collecte apprend
+## Constats
 
 Trois observations, sur dix produits seulement.
 
@@ -526,12 +526,12 @@ pd.Series(etiquettes).sort_values(ascending=False).to_frame("produits concernés
 """),
     md("""
 **Les libellés sont irréguliers**, trace visible de la saisie collaborative et de la reconnaissance
-automatique d'étiquettes. **Et la catégorie source n'est pas toujours juste** — un cocktail à la
+automatique d'étiquettes. **Et la catégorie source n'est pas toujours juste** : un cocktail à la
 pêche figure parmi les champagnes.
 """),
     code("""
 for ligne in collecte.itertuples():
-    contenu = ligne.foodContentsLabel[:60] if ligne.foodContentsLabel else "— vide —"
+    contenu = ligne.foodContentsLabel[:60] if ligne.foodContentsLabel else "· vide ·"
     print(f"  {ligne.label[:52]:<52} | {contenu}")
 """),
     code("""
@@ -543,7 +543,7 @@ print(f"écrit dans {sortie}")
 """),
     md("""
 **Ce que ce carnet établit.** La collecte automatique fonctionne et produit le fichier demandé. Elle
-reste exploratoire — dix produits ne caractérisent pas une base entière — mais elle met déjà en
+reste exploratoire, dix produits ne caractérisent pas une base entière, mais elle met déjà en
 évidence un enjeu de qualité et d'homogénéité des métadonnées, qui devra être traité en amont du
 modèle de classification. On retrouve, sous une autre forme, la difficulté du point de départ : ici
 comme sur la marketplace, les catégories sont déclarées par des contributeurs qui ne suivent pas

@@ -42,7 +42,7 @@ def mesurer(
 def couverture_au_seuil(
     proba: np.ndarray, y_vrai, etiquettes: list[str], seuils=(0.5, 0.6, 0.7, 0.8, 0.9)
 ) -> pd.DataFrame:
-    """Compromis couverture / erreurs — l'abstention sous seuil, chiffrée.
+    """Compromis couverture / erreurs : l'abstention sous seuil, chiffrée.
 
     Sans son taux d'erreur associé, une couverture ne veut rien dire : les deux
     colonnes se lisent ensemble.

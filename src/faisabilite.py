@@ -1,4 +1,4 @@
-"""Projeter, segmenter, mesurer — l'étude de faisabilité proprement dite.
+"""Projeter, segmenter, mesurer : l'étude de faisabilité proprement dite.
 
 La question n'est pas de prédire mais de savoir si les catégories existent
 déjà dans les représentations. On y répond en deux temps, comme le demande la
@@ -6,7 +6,7 @@ mission : d'abord une projection en deux dimensions qu'on regarde, ensuite une
 mesure qui confirme ou dément ce qu'on a cru voir.
 
 La mesure est l'indice de Rand ajusté. Il compare deux partitions d'un même
-ensemble — ici les vraies catégories et les groupes formés sans elles — et
+ensemble, ici les vraies catégories et les groupes formés sans elles, et
 vaut 0 quand l'accord n'excède pas le hasard, 1 quand les deux coïncident.
 L'ajustement est ce qui compte : sur sept groupes de tailles voisines, un
 appariement aléatoire produit déjà un accord apparent non négligeable.

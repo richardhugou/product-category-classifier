@@ -1,4 +1,4 @@
-"""Sérialise le modèle de la partie 4 — celui, et pas un autre.
+"""Sérialise le modèle de la partie 4 : celui, et pas un autre.
 
 Ce script ne choisit rien. La stratégie a été retenue sur la validation par
 `supervise_image.py` ; on relit ce choix dans le rapport produit, on rejoue la
@@ -52,11 +52,11 @@ def main() -> int:
     y_te = enc.transform(test[LABEL_COL])
     ids_tr, ids_te = train["uniq_id"].tolist(), test["uniq_id"].tolist()
 
-    print("Extraction VGG16 (socle figé) — base d'entraînement")
+    print("Extraction VGG16 (socle figé) : base d'entraînement")
     X_tr, _ = extraire(ids_tr)
     print(f"  {X_tr.shape[0]} images · {X_tr.shape[1]} dimensions")
 
-    print(f"Extraction des variantes augmentées — {intensite} ×{copies}")
+    print(f"Extraction des variantes augmentées : {intensite} ×{copies}")
     X_aug, index = extraire(ids_tr, intensite=intensite, copies=copies)
     X = np.vstack([X_tr, X_aug])
     y = np.concatenate([y_tr, y_tr[index]])
@@ -84,14 +84,14 @@ def main() -> int:
 
     if abs(f1 - f1_attendu) > TOLERANCE or abs(exact - exact_attendu) > TOLERANCE:
         ARTEFACT.unlink(missing_ok=True)
-        print("ÉCHEC — le protocole n'est pas reproduit. Artefact supprimé, rien n'est publié.")
+        print("ÉCHEC : le protocole n'est pas reproduit. Artefact supprimé, rien n'est publié.")
         return 1
 
     rang = ids_te.index(MONTRE)
     probas = tete_rechargee.predict_proba(X_te[rang : rang + 1])[0]
     ordre = np.argsort(probas)[::-1]
     nom = df.loc[df["uniq_id"] == MONTRE, "product_name"].iloc[0].strip()
-    print(f"Prédiction pour « {nom} » — jeu de test, jamais vu à l'entraînement")
+    print(f"Prédiction pour « {nom} » : jeu de test, jamais vu à l'entraînement")
     for i in ordre[:3]:
         print(f"  {etiquettes[i]:28s} {probas[i]:.4f}")
     print(f"\nCatégorie réelle : {df.loc[df['uniq_id'] == MONTRE, LABEL_COL].iloc[0]}")

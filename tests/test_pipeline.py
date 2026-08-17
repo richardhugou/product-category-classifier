@@ -37,7 +37,7 @@ def test_tailles_de_decoupe(df):
 
 
 def test_decoupes_disjointes(df):
-    """Aucun article ne peut se trouver dans deux plis — c'est LE test anti-fuite."""
+    """Aucun article ne peut se trouver dans deux plis : c'est LE test anti-fuite."""
     train, val, test = split(df)
     a, b, c = (set(p["uniq_id"]) for p in (train, val, test))
     assert not (a & b)

@@ -67,7 +67,7 @@ def fig1(df: pd.DataFrame) -> None:
         "TF-IDF + XGBoost": (0, -46),
         "BERT figé (2018)": (0, -46),
         "ModernBERT figé (2024)": (0, -46),
-        "DINOv2 figé — image seule": (-98, 12),
+        "DINOv2 figé : image seule": (-98, 12),
         "Fusion texte + image": (0, 26),
     }
     for _, r in d.iterrows():
@@ -97,11 +97,11 @@ def fig1(df: pd.DataFrame) -> None:
     ax.set_xscale("log")
     ax.set_xlim(0.025, 150)
     ax.set_ylim(0.855, 0.995)
-    ax.set_xlabel("Temps d'inférence par article — ms, échelle logarithmique")
+    ax.set_xlabel("Temps d'inférence par article : ms, échelle logarithmique")
     ax.set_ylabel("F1 macro")
     ax.grid(axis="y", color=GRID, lw=0.8, zorder=0)
     ax.set_title(
-        "La fusion gagne 3 points de F1 — pour 600 fois le coût d'inférence",
+        "La fusion gagne 3 points de F1 : pour 600 fois le coût d'inférence",
         fontsize=13,
         fontweight="bold",
         pad=16,
@@ -122,7 +122,7 @@ def fig1(df: pd.DataFrame) -> None:
 
 
 def fig2(per_class: dict) -> None:
-    """F1 par classe — révèle les catégories que les modèles confondent."""
+    """F1 par classe : révèle les catégories que les modèles confondent."""
     m = pd.DataFrame(per_class)
     m = m.loc[m.mean(axis=1).sort_values().index]  # les plus faibles en haut
 
@@ -157,7 +157,7 @@ def fig2(per_class: dict) -> None:
             )
 
     ax.set_title(
-        "F1 par catégorie — l'image répare exactement les classes que le texte rate",
+        "F1 par catégorie : l'image répare exactement les classes que le texte rate",
         fontsize=12.5,
         fontweight="bold",
         pad=14,
@@ -251,7 +251,7 @@ def fig3() -> None:
             )
 
     ax.set_title(
-        "De la fiche produit à la catégorie — la chaîne de transformation",
+        "De la fiche produit à la catégorie : la chaîne de transformation",
         fontsize=14,
         fontweight="bold",
         pad=12,
@@ -289,7 +289,7 @@ def fig4() -> None:
     a1.set_xlabel("articles")
     a1.grid(axis="x", color=GRID, lw=0.8, zorder=0)
     a1.set_title(
-        "7 catégories, 150 articles chacune — équilibre parfait",
+        "7 catégories, 150 articles chacune : équilibre parfait",
         fontsize=11.5,
         fontweight="bold",
         loc="left",
@@ -312,7 +312,7 @@ def fig4() -> None:
     for m in bp["medians"]:
         m.set(color=BLEU_FONCE, linewidth=2)
     a2.set_yticklabels(ordre, fontsize=9.5)
-    a2.set_xlabel("longueur de la description — mots")
+    a2.set_xlabel("longueur de la description : mots")
     a2.grid(axis="x", color=GRID, lw=0.8, zorder=0)
     a2.set_title(
         "L'information disponible, elle, ne l'est pas",

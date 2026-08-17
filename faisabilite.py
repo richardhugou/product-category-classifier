@@ -1,4 +1,4 @@
-"""Étude de faisabilité — les sept représentations, projetées puis segmentées.
+"""Étude de faisabilité : les sept représentations, projetées puis segmentées.
 
 Répond à la première demande : les produits d'une même catégorie se
 rapprochent-ils spontanément, une fois traduits en nombres ? On projette, on
@@ -35,7 +35,7 @@ PALETTE = ["#4c78a8", "#f58518", "#54a24b", "#e45756", "#b279a2", "#9d755d", "#7
 
 # La légende sous la figure doit suffire à comprendre ce qui est mesuré, sans
 # le texte du rapport. Un lecteur qui découvre le graphique seul doit savoir
-# sur quoi porte l'indice affiché — c'est la première question qu'on pose.
+# sur quoi porte l'indice affiché : c'est la première question qu'on pose.
 LEGENDE = (
     "Projection ACP + t-SNE. Les couleurs sont les catégories réelles ; l'ARI mesure l'accord "
     "entre ces catégories et 7 groupes formés par K-means sans utiliser les étiquettes.\n"
@@ -114,7 +114,7 @@ def main(texte_seul: bool) -> None:
             plans[nom]["projection"],
             categories,
             ordre,
-            f"{nom} — ARI sur projection : {_fr(ari)}",
+            f"{nom} : ARI sur projection : {_fr(ari)}",
         )
     for axe in axes.ravel()[len(noms) :]:
         axe.axis("off")
@@ -130,7 +130,7 @@ def main(texte_seul: bool) -> None:
         fontsize=9,
     )
     fig.text(0.5, 0.012, LEGENDE, ha="center", va="bottom", fontsize=8.5, color="#555555")
-    fig.suptitle("Projection des 1 050 produits — couleur : catégorie réelle", fontsize=13, y=0.99)
+    fig.suptitle("Projection des 1 050 produits : couleur : catégorie réelle", fontsize=13, y=0.99)
     fig.tight_layout(rect=(0, 0.13, 1, 0.97))
     fig.savefig(REPORTS / "fig5_projections.png", dpi=150)
     plt.close(fig)
@@ -145,9 +145,9 @@ def main(texte_seul: bool) -> None:
         etude["projection"],
         etude["groupes_projection"],
         sorted(set(etude["groupes_projection"])),
-        f"7 groupes K-means, sans étiquettes — ARI {_fr(etude['ARI projection'])}",
+        f"7 groupes K-means, sans étiquettes : ARI {_fr(etude['ARI projection'])}",
     )
-    fig.suptitle(f"{meilleure} — ce que l'algorithme retrouve seul", fontsize=13)
+    fig.suptitle(f"{meilleure}, ce que l'algorithme retrouve seul", fontsize=13)
     fig.text(
         0.5,
         0.015,
@@ -170,7 +170,7 @@ def main(texte_seul: bool) -> None:
     axe.set_yticks(list(y))
     axe.set_yticklabels(tableau["Représentation"])
     axe.invert_yaxis()
-    axe.set_xlabel("Indice de Rand ajusté — 0 = hasard, 1 = accord parfait")
+    axe.set_xlabel("Indice de Rand ajusté : 0 = hasard, 1 = accord parfait")
     axe.set_title("Accord entre les groupes trouvés et les catégories réelles", fontsize=12)
     for i, v in enumerate(tableau["ARI (projection 2D)"]):
         axe.text(v + 0.008, i, f"{v:.3f}", va="center", fontsize=9)

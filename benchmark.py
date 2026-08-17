@@ -5,7 +5,7 @@ Les axes rapportés ne sont pas seulement la performance : le temps
 d'entraînement, le temps d'inférence **de bout en bout** et l'empreinte
 déployée décident autant, et souvent plus.
 
-    python benchmark.py                      # texte classique — socle, sans torch
+    python benchmark.py                      # texte classique : socle, sans torch
     python benchmark.py --encoders           # + BERT et ModernBERT figés
     python benchmark.py --encoders --images  # + image seule et fusion
 """
@@ -125,7 +125,7 @@ def main(avec_encodeurs: bool, avec_images: bool) -> None:
 
         from src.text import ENCODEURS, charger_encodeur, empreinte_mo, encoder
 
-        print("\nEncodeurs de texte figés — même tête, même découpe")
+        print("\nEncodeurs de texte figés : même tête, même découpe")
         for nom, model_id in ENCODEURS.items():
             try:
                 # Le chargement du modèle est un coût de démarrage, pas d'inférence.
@@ -146,14 +146,14 @@ def main(avec_encodeurs: bool, avec_images: bool) -> None:
                 )
                 ajouter(nom, pred, t, t_inf * 1000 / n_te, mo)
             except Exception as e:  # réseau, poids indisponibles, mémoire
-                print(f"  {nom:30s} ÉCHEC — {type(e).__name__}: {str(e)[:80]}")
+                print(f"  {nom:30s} ÉCHEC, {type(e).__name__}: {str(e)[:80]}")
 
     # ------------------------------------------------------- image et fusion
     if avec_images:
         from src.fusion import concatener, normaliser
         from src.images import MODEL_ID, empreinte_encodeur_mo, features
 
-        print(f"\nImage — {MODEL_ID} figé")
+        print(f"\nImage : {MODEL_ID} figé")
         X_img, t_enc = features(df["uniq_id"])
         par_id = dict(zip(df["uniq_id"], X_img, strict=True))
         I_tr = normaliser(np.vstack([par_id[u] for u in train["uniq_id"]]))
@@ -166,7 +166,7 @@ def main(avec_encodeurs: bool, avec_images: bool) -> None:
         _, t = _chronometrer(lambda: mlp_img.fit(I_tr, y_tr))
         joblib.dump(mlp_img, MODELS / "image_mlp.joblib")
         pred, t_inf = _chronometrer(lambda: mlp_img.predict(I_te))
-        ajouter("DINOv2 figé — image seule", pred, t + t_img, t_inf * 1000 / n_te + ms_img, mo_img)
+        ajouter("DINOv2 figé : image seule", pred, t + t_img, t_inf * 1000 / n_te + ms_img, mo_img)
 
         F_tr = concatener(Xtr, np.vstack([par_id[u] for u in train["uniq_id"]]))
         F_te = concatener(vec.transform(txt_te), np.vstack([par_id[u] for u in test["uniq_id"]]))

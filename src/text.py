@@ -2,9 +2,9 @@
 
 Deux familles, mêmes conventions :
 
-- **TF-IDF** — ajusté sur l'entraînement seulement. C'est la seule étape à état
+- **TF-IDF** : ajusté sur l'entraînement seulement. C'est la seule étape à état
   de la chaîne texte, donc le seul endroit où une fuite est possible.
-- **Encodeur figé** — aucun état appris, la moyenne des jetons de
+- **Encodeur figé** : aucun état appris, la moyenne des jetons de
   `last_hidden_state`. Le modèle n'est jamais réglé finement : on compare des
   représentations, pas des capacités de modèles.
 """

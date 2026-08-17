@@ -1,4 +1,4 @@
-"""Sérialise la solution retenue — fusion TF-IDF + DINOv2 — et la vérifie.
+"""Sérialise la solution retenue, fusion TF-IDF + DINOv2, et la vérifie.
 
 Le bras retenu vient de `reports/comparaison_validation.csv` : ce script ne
 choisit rien. Il rejoue l'entraînement de ce seul bras, vérifie que le modèle
@@ -39,7 +39,7 @@ def main() -> int:
     attendu = pd.read_csv(REPORTS / "comparaison_test.csv").iloc[0]
     retenue = str(attendu["Représentation retenue"])
     if "TF-IDF + DINOv2" not in retenue:
-        print(f"Bras retenu inattendu : {retenue} — ce script ne sait sérialiser que la fusion.")
+        print(f"Bras retenu inattendu : {retenue}, ce script ne sait sérialiser que la fusion.")
         return 1
     print(f"Bras retenu sur validation : {retenue}")
     print(f"À reproduire : F1 macro {attendu['F1 macro (test)']:.4f} · {attendu['Bien classés']}\n")
@@ -72,21 +72,21 @@ def main() -> int:
 
     if abs(f1 - float(attendu["F1 macro (test)"])) > TOLERANCE:
         ARTEFACT.unlink(missing_ok=True)
-        print("ÉCHEC — le protocole n'est pas reproduit. Artefact supprimé.")
+        print("ÉCHEC : le protocole n'est pas reproduit. Artefact supprimé.")
         return 1
 
     ids_te = test["uniq_id"].tolist()
     rang = ids_te.index(MONTRE)
     probas = paquet["tete"].predict_proba(X_te[rang])[0]
     ordre = np.argsort(probas)[::-1]
-    print("\nPrédiction pour la montre V9 — jeu de test")
+    print("\nPrédiction pour la montre V9 : jeu de test")
     for i in ordre[:3]:
         print(f"  {paquet['etiquettes'][i]:28s} {probas[i]:.4f}")
 
     print("\nLes erreurs restantes du jeu de test")
     for i in np.flatnonzero(pred != y_te):
         nom = str(test.iloc[i]["product_name"]).strip()[:52]
-        print(f"  « {nom} » — {enc.classes_[y_te[i]]} lu {enc.classes_[pred[i]]}")
+        print(f"  « {nom} » : {enc.classes_[y_te[i]]} lu {enc.classes_[pred[i]]}")
     print(f"\n→ {ARTEFACT.relative_to(ROOT)}")
     return 0
 

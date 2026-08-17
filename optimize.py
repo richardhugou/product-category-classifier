@@ -1,4 +1,4 @@
-"""Optimisation des hyperparamètres — et critique de la méthode d'optimisation.
+"""Optimisation des hyperparamètres, et critique de la méthode d'optimisation.
 
 Deux modes, et la comparaison des deux est le vrai sujet de ce script.
 
@@ -10,7 +10,7 @@ naïve, celle qu'on écrit en premier. Elle est conservée ici parce qu'elle
 Par défaut, la sélection se fait par **validation croisée à 5 blocs sur les
 892 articles d'entraînement et de validation réunis**. Chaque configuration
 est jugée sur cinq découpes différentes, ce qui donne une moyenne et un
-écart-type — donc un moyen de savoir si un écart veut dire quelque chose.
+écart-type, donc un moyen de savoir si un écart veut dire quelque chose.
 
 Dans les deux cas, le jeu de test reste fermé jusqu'à la toute fin et n'est
 ouvert qu'une fois, avec la seule configuration retenue.
@@ -52,7 +52,7 @@ REPORTS = ROOT / "reports"
 N_BLOCS = 5
 
 # Grille de la représentation. Plusieurs combinaisons produisent le même
-# vocabulaire — un plafond de 10 000 termes ne change rien quand le corpus n'en
+# vocabulaire : un plafond de 10 000 termes ne change rien quand le corpus n'en
 # produit que 4 679. Ces doublons sont écartés à la construction de la grille.
 GRILLE_TFIDF = [
     {"max_features": mf, "ngram_range": ng, "min_df": md}
@@ -94,9 +94,9 @@ def _par_representation(table: pd.DataFrame, colonne: str) -> pd.DataFrame:
     """Performance moyenne de chaque représentation, à conception équilibrée.
 
     À préférer aux effets marginaux pour tout ce qui touche la représentation.
-    La déduplication de la grille rend le plan déséquilibré — `max_features`
+    La déduplication de la grille rend le plan déséquilibré : `max_features`
     illimité ne survit que là où il change quelque chose, c'est-à-dire sur les
-    seules configurations à bigrammes — si bien que sa moyenne marginale est
+    seules configurations à bigrammes : si bien que sa moyenne marginale est
     confondue avec l'effet des bigrammes. Ici chaque représentation porte le
     même nombre de configurations de tête, donc les moyennes se comparent.
     """
@@ -112,7 +112,7 @@ def _par_representation(table: pd.DataFrame, colonne: str) -> pd.DataFrame:
 def _effets_marginaux(table: pd.DataFrame, colonne: str, axes: list[str]) -> pd.DataFrame:
     """Performance moyenne par valeur d'hyperparamètre, les autres confondus.
 
-    Valable tant que le plan est équilibré sur l'axe considéré — c'est le cas
+    Valable tant que le plan est équilibré sur l'axe considéré : c'est le cas
     des réglages de la tête, qui apparaissent le même nombre de fois. Pour la
     représentation, voir `_par_representation`.
     """
@@ -229,7 +229,7 @@ def main(avec_images: bool, holdout: bool) -> None:
     print(f"\n  {len(table)} combinaisons en {time.perf_counter() - t0:.0f} s")
     print(f"  meilleure : F1 {m['F1 macro']:.4f} ± {m['Écart-type']:.4f}")
     print(f"  étendue du classement : {table['F1 macro'].max() - table['F1 macro'].min():.4f}")
-    print("\n  Par représentation — plan équilibré, moyennes comparables :")
+    print("\n  Par représentation : plan équilibré, moyennes comparables :")
     print(representations.to_string(index=False))
     print("\n  Effets marginaux (à ne lire que pour les axes de la tête) :")
     print(marges.to_string(index=False))
@@ -252,7 +252,7 @@ def main(avec_images: bool, holdout: bool) -> None:
     clf = _mlp(p_mlp_best).fit(Xsel, y_sel)
     resultats = [mesurer("Texte optimisé", y_te, clf.predict(Xte), etiquettes, 0.0, 0.0, 0.0)]
     print(
-        f"\n  TEST — F1 macro {resultats[0]['F1 macro']:.4f} · min {resultats[0]['F1 classe min']}"
+        f"\n  TEST : F1 macro {resultats[0]['F1 macro']:.4f} · min {resultats[0]['F1 classe min']}"
     )
 
     seuils = {}
@@ -261,7 +261,7 @@ def main(avec_images: bool, holdout: bool) -> None:
     if avec_images:
         from src.images import features
 
-        print("\nFusion — poids du bloc image")
+        print("\nFusion : poids du bloc image")
         X_img, _ = features(df["uniq_id"])
         par_id = dict(zip(df["uniq_id"], X_img, strict=True))
         img = {
@@ -321,7 +321,7 @@ def main(avec_images: bool, holdout: bool) -> None:
             mesurer("Fusion optimisée", y_te, clf_f.predict(Fte), etiquettes, 0.0, 0.0, 0.0)
         )
         print(
-            f"  TEST — F1 macro {resultats[-1]['F1 macro']:.4f} · min {resultats[-1]['F1 classe min']}"
+            f"  TEST : F1 macro {resultats[-1]['F1 macro']:.4f} · min {resultats[-1]['F1 classe min']}"
         )
 
         vrai_te = [etiquettes[i] for i in y_te]

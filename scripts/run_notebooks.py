@@ -34,7 +34,7 @@ def executer(chemin: Path) -> bool:
     try:
         client.execute()
     except Exception as erreur:
-        print(f"  ÉCHEC  {chemin.name} — {type(erreur).__name__}: {str(erreur)[:160]}")
+        print(f"  ÉCHEC  {chemin.name} : {type(erreur).__name__}: {str(erreur)[:160]}")
         return False
     nbformat.write(carnet, chemin)
     print(f"  ok     {chemin.name}  ({time.perf_counter() - depart:.0f} s)")

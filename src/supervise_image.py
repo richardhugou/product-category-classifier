@@ -54,7 +54,7 @@ def transformations(intensite: str):
 
     Le choix est contraint par la nature des photographies : des produits de
     catalogue, centrés, souvent sur fond clair. Le retournement horizontal et
-    de légères rotations restent plausibles — un même article peut être
+    de légères rotations restent plausibles : un même article peut être
     photographié dans l'autre sens. Le retournement vertical, lui, produirait
     des images qu'on ne rencontrera jamais, et n'est pas retenu.
 
@@ -88,7 +88,7 @@ def extraire(uniq_ids: list[str], intensite: str = "aucune", copies: int = 1):
     """Caractéristiques VGG16 des images désignées.
 
     Avec `copies > 1`, chaque image produit plusieurs variantes augmentées.
-    Renvoie (matrice, index) — l'index dit de quelle image d'origine vient
+    Renvoie (matrice, index) : l'index dit de quelle image d'origine vient
     chaque ligne, ce qui permet de dupliquer les étiquettes en conséquence.
     """
     import torch

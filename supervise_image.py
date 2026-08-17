@@ -5,7 +5,7 @@ L'ordre des opérations est ici la seule chose qui compte vraiment.
 Les stratégies d'augmentation sont comparées sur les 157 produits de
 validation. La stratégie retenue est celle qui obtient la meilleure F1 macro
 sur ce jeu-là. Ce n'est qu'ensuite, une fois ce choix figé, que les 158
-produits de test sont ouverts — une seule fois, avec ce seul modèle.
+produits de test sont ouverts : une seule fois, avec ce seul modèle.
 
 Cette discipline n'est pas décorative. Comparer quatre stratégies sur le test
 puis retenir la meilleure ferait du score de test une mesure de la qualité de
@@ -146,7 +146,7 @@ def main(copies: int) -> None:
     axe.tick_params(labelsize=8)
     plt.setp(axe.get_xticklabels(), rotation=30, ha="right", rotation_mode="anchor")
     axe.set_title(
-        f"{retenue} — {len(y_te)} produits de test, ouverts une seule fois\n"
+        f"{retenue} : {len(y_te)} produits de test, ouverts une seule fois\n"
         f"F1 macro {resultat['F1 macro (test)']:.3f}".replace(".", ","),
         fontsize=11,
     )
@@ -177,7 +177,7 @@ def main(copies: int) -> None:
     axe.set_ylim(0, 1.05)
     axe.legend(fontsize=8.5, frameon=False, ncol=2)
     axe.set_title(
-        "L'augmentation déplace les erreurs plutôt qu'elle ne les supprime — jeu de validation",
+        "L'augmentation déplace les erreurs plutôt qu'elle ne les supprime : jeu de validation",
         fontsize=12,
     )
     for bord in ("top", "right"):

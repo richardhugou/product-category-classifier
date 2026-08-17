@@ -1,4 +1,4 @@
-"""Profilage du jeu de données — les chiffres de l'audit qualité.
+"""Profilage du jeu de données : les chiffres de l'audit qualité.
 
     python scripts/profile_data.py
 
@@ -25,7 +25,7 @@ def main() -> None:
     print(f"Fichier   : {CSV.name}")
     print(f"Dimensions: {brut.shape[0]} lignes × {brut.shape[1]} colonnes\n")
 
-    print("— COMPLÉTUDE —")
+    print("· COMPLÉTUDE ·")
     manquants = brut.isna().sum()
     manquants = manquants[manquants > 0].sort_values(ascending=False)
     if manquants.empty:
@@ -33,20 +33,20 @@ def main() -> None:
     for col, n in manquants.items():
         print(f"  {col:24s} {n:4d} manquants ({n / len(brut):.0%})")
 
-    print("\n— UNICITÉ —")
+    print("\n· UNICITÉ ·")
     print(f"  doublons uniq_id      : {brut['uniq_id'].duplicated().sum()}")
     print(f"  doublons description  : {brut[TEXT_COL].duplicated().sum()}")
 
-    print("\n— VALIDITÉ —")
+    print("\n· VALIDITÉ ·")
     n = df[LABEL_COL].value_counts().sort_index()
     print(f"  {n.nunique()} effectif(s) distinct(s) sur {len(n)} catégories")
     for cat, v in n.items():
         print(f"  {cat:28s} {v}")
 
-    print("\n— COHÉRENCE —")
+    print("\n· COHÉRENCE ·")
     print(f"  lignes avec une image référencée : {brut['image'].notna().sum()} / {len(brut)}")
 
-    print("\n— INFORMATION DISPONIBLE —")
+    print("\n· INFORMATION DISPONIBLE ·")
     long = df[TEXT_COL].str.split().str.len()
     print(
         f"  longueur des descriptions (mots) : min {long.min()} · médiane {long.median():.0f} "
@@ -58,7 +58,7 @@ def main() -> None:
         f"à {med.iloc[-1]:.0f} ({med.index[-1]})"
     )
 
-    print("\n— CONSTAT : le champ `brand` est écarté —")
+    print("\n· CONSTAT : le champ `brand` est écarté ·")
     absent = brut.assign(nb=brut["brand"].isna()).groupby(df[LABEL_COL])["nb"].sum()
     for cat, v in absent.sort_values(ascending=False).items():
         print(f"  {cat:28s} {int(v):3d} / 150 sans marque")
@@ -66,7 +66,7 @@ def main() -> None:
     print("  Utiliser ce champ ferait fuiter la cible. Il est exclu du modèle.")
 
     tr, va, te = split(df)
-    print(f"\n— DÉCOUPE —\n  {len(tr)} entraînement · {len(va)} validation · {len(te)} test")
+    print(f"\n· DÉCOUPE ·\n  {len(tr)} entraînement · {len(va)} validation · {len(te)} test")
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 """Les sept représentations demandées par la mission, derrière une interface unique.
 
-Cinq pour le texte — comptage simple, TF-IDF, Word2Vec, BERT, USE — et deux
-pour l'image — SIFT en sac de mots visuels, et un réseau convolutif
+Cinq pour le texte, comptage simple, TF-IDF, Word2Vec, BERT, USE, et deux
+pour l'image : SIFT en sac de mots visuels, et un réseau convolutif
 pré-entraîné utilisé en transfert. Chacune reçoit les 1 050 articles et rend
 une matrice `(1050, d)` accompagnée de son temps de calcul.
 
@@ -127,14 +127,14 @@ np.save(sys.argv[2], vecteurs.astype(np.float32))
 
 
 def use(textes: list[str]) -> np.ndarray:
-    """Universal Sentence Encoder — l'implémentation de référence.
+    """Universal Sentence Encoder : l'implémentation de référence.
 
     C'est bien le modèle publié par Google sur TensorFlow Hub, et non une
     distillation approchante : la mission le nomme explicitement.
 
     L'encodage est délégué à un sous-processus, pour une raison très concrète.
-    Chargé dans un interpréteur ayant déjà importé PyTorch — ce que font BERT,
-    SIFT et VGG16 — TensorFlow se bloque sur cette machine : le processus reste
+    Chargé dans un interpréteur ayant déjà importé PyTorch, ce que font BERT,
+    SIFT et VGG16 : TensorFlow se bloque sur cette machine : le processus reste
     figé indéfiniment, sans lever la moindre erreur. Isolé, il charge le modèle
     en deux secondes. Le sous-processus n'importe donc que TensorFlow, écrit le
     résultat sur disque, et rend la main.

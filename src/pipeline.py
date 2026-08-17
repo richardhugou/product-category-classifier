@@ -1,4 +1,4 @@
-"""Chargement, découpe et vérité terrain — source unique pour le benchmark et l'application.
+"""Chargement, découpe et vérité terrain : source unique pour le benchmark et l'application.
 
 Découpe 70 / 15 / 15 stratifiée, graine 42. Aucune logique métier ailleurs :
 tous les scripts et carnets appellent ce module, ce qui garantit que leurs
